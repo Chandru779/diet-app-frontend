@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { FeedAppBar } from "@/components/app/feed-app-bar";
 import { FeedPostCard } from "@/components/app/feed-post-card";
 import { FeedSearch } from "@/components/app/feed-search";
+import { MealEmptyIllustration } from "@/components/app/meal-empty-illustration";
 import { MealLoadingIllustration } from "@/components/app/meal-loading-illustration";
 import { fetchMeals } from "@/lib/api/meal";
 import { useFeedStore } from "@/lib/store/feed-store";
@@ -19,6 +20,7 @@ function getGreeting() {
 
 export function MealList() {
   const refreshKey = useFeedStore((s) => s.refreshKey);
+  const openCreateSheet = useFeedStore((s) => s.openCreateSheet);
   const displayName = useAuthStore((s) => s.displayName);
   const [query, setQuery] = useState("");
   const [meals, setMeals] = useState<ApiMeal[]>([]);
@@ -67,6 +69,10 @@ export function MealList() {
     ? `Hey, ${displayName.split("-")[0]} 👋`
     : "What's on your plate?";
 
+  const listEmpty = !loading && !error && meals.length === 0;
+  const showNoSearchResults =
+    !loading && !error && meals.length > 0 && filtered.length === 0 && query;
+
   return (
     <div className="pb-4">
       <div className="bg-feed-header -mx-4 mb-5 rounded-b-[2rem] px-5 pb-5 pt-3">
@@ -74,7 +80,7 @@ export function MealList() {
         <FeedSearch value={query} onChange={setQuery} />
       </div>
 
-      {!loading && !error ? (
+      {!loading && !error && !listEmpty ? (
         <div className="mb-3 flex items-center justify-between px-0.5">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {query
@@ -103,7 +109,31 @@ export function MealList() {
         </div>
       ) : null}
 
-      {!loading && !error ? (
+      {!loading && !error && listEmpty ? (
+        <div
+          className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/80 bg-card/40 px-6 py-16 text-center"
+          role="status"
+          aria-live="polite"
+        >
+          <MealEmptyIllustration className="mb-4 h-20 w-20 text-primary/35" />
+          <p className="font-heading text-lg font-semibold text-foreground">
+            No meals yet
+          </p>
+          <p className="mt-1 max-w-xs text-sm text-muted-foreground">
+            When you or others log meals, they will show up here. Be the first
+            to share one.
+          </p>
+          <button
+            type="button"
+            onClick={openCreateSheet}
+            className="mt-6 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-soft transition hover:opacity-90 active:scale-[0.99]"
+          >
+            Log a meal
+          </button>
+        </div>
+      ) : null}
+
+      {!loading && !error && !listEmpty ? (
         <>
           <ul className="flex flex-col gap-3">
             {filtered.map((meal) => (
@@ -113,7 +143,7 @@ export function MealList() {
             ))}
           </ul>
 
-          {filtered.length === 0 && query ? (
+          {showNoSearchResults ? (
             <div className="py-16 text-center">
               <p className="text-sm text-muted-foreground">
                 No meals matched &ldquo;{query}&rdquo;

@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Nunito, Sansita } from "next/font/google";
+import { BRAND, brandColors } from "@/lib/constants/branding";
 import "./globals.css";
 
 /**
@@ -20,8 +21,25 @@ const sansita = Sansita({
 });
 
 export const metadata: Metadata = {
-  title: "Protein Bar",
-  description: "Track meals, explore macros, eat with clarity.",
+  title: BRAND.name,
+  description: BRAND.tagline,
+  applicationName: BRAND.name,
+  appleWebApp: {
+    capable: true,
+    title: BRAND.name,
+    statusBarStyle: "default",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: brandColors.primary,
+  colorScheme: "light",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
