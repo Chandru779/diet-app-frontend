@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { FeedAppBar } from "@/components/app/feed-app-bar";
 import { FeedPostCard } from "@/components/app/feed-post-card";
 import { FeedSearch } from "@/components/app/feed-search";
+import { MealLoadingIllustration } from "@/components/app/meal-loading-illustration";
 import { fetchMeals } from "@/lib/api/meal";
 import { useFeedStore } from "@/lib/store/feed-store";
 import { useAuthStore } from "@/lib/store/auth-store";
@@ -14,24 +15,6 @@ function getGreeting() {
   if (h < 12) return "Good morning";
   if (h < 17) return "Good afternoon";
   return "Good evening";
-}
-
-function SkeletonCard() {
-  return (
-    <div className="flex gap-3 rounded-2xl bg-card p-3.5 shadow-sm">
-      <div className="h-[88px] w-[88px] animate-pulse rounded-xl bg-muted" />
-      <div className="flex flex-1 flex-col gap-2 py-1">
-        <div className="h-3 w-20 animate-pulse rounded bg-muted" />
-        <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
-        <div className="h-3 w-full animate-pulse rounded bg-muted" />
-        <div className="mt-auto flex gap-2">
-          {[1, 2, 3, 4].map((n) => (
-            <div key={n} className="h-3 w-10 animate-pulse rounded bg-muted" />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
 }
 
 export function MealList() {
@@ -102,10 +85,15 @@ export function MealList() {
       ) : null}
 
       {loading ? (
-        <div className="flex flex-col gap-3">
-          {[1, 2, 3].map((n) => (
-            <SkeletonCard key={n} />
-          ))}
+        <div
+          className="flex flex-col items-center justify-center py-16"
+          aria-busy="true"
+          aria-live="polite"
+        >
+          <MealLoadingIllustration
+            className="h-16 w-16 animate-pulse text-primary/50"
+            label="Loading meals"
+          />
         </div>
       ) : null}
 

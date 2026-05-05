@@ -19,6 +19,7 @@ export function FeedPostCard({ post }: { post: ApiMeal }) {
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-[1.04]"
               sizes="88px"
+              unoptimized={post.image.startsWith("data:")}
             />
           ) : (
             <div className="flex h-full items-center justify-center">

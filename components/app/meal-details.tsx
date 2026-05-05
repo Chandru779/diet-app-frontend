@@ -8,8 +8,12 @@ type MealDetailsProps = {
   meal: ApiMeal;
 };
 
-function formatQty(quantity: number, unit: string | null): string {
-  return unit ? `${quantity} ${unit}` : `${quantity}`;
+function formatQty(quantity: number, quantityUnit: "grams" | "count"): string {
+  if (quantityUnit === "count") {
+    const n = quantity % 1 === 0 ? String(quantity) : quantity.toFixed(1);
+    return `${n}×`;
+  }
+  return `${quantity} g`;
 }
 
 export function MealDetails({ meal }: MealDetailsProps) {
@@ -25,6 +29,7 @@ export function MealDetails({ meal }: MealDetailsProps) {
             className="object-cover"
             sizes="100vw"
             priority
+            unoptimized={meal.image.startsWith("data:")}
           />
         ) : (
           <div className="flex h-full items-center justify-center bg-gradient-to-br from-muted via-background to-muted">
@@ -139,7 +144,7 @@ export function MealDetails({ meal }: MealDetailsProps) {
                       {ing.name}
                     </p>
                     <span className="shrink-0 rounded-lg bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                      {formatQty(ing.quantity, ing.unit)}
+                      {formatQty(ing.quantity, ing.quantityUnit ?? "grams")}
                     </span>
                   </div>
 

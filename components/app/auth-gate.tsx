@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { MealLoadingIllustration } from "@/components/app/meal-loading-illustration";
 import { useAuthStore } from "@/lib/store/auth-store";
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
@@ -27,8 +28,15 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   if (!hydrated) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center font-nunito text-muted-foreground text-sm">
-        Loading…
+      <div
+        className="flex min-h-[40vh] flex-col items-center justify-center gap-3"
+        aria-busy="true"
+        aria-live="polite"
+      >
+        <MealLoadingIllustration
+          className="h-14 w-14 animate-pulse text-primary/55"
+          label="Loading"
+        />
       </div>
     );
   }

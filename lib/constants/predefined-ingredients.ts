@@ -1,12 +1,20 @@
 /**
- * Predefined common ingredients with nutrition values per 100 g.
- * The backend service scales these by (quantity / nutritionBaseQuantity)
- * so we always send nutritionBaseQuantity: 100 alongside these values.
+ * Predefined ingredients. Gram mode uses USDA-style values per 100 g.
+ * Count mode (when `countOption` is set) uses nutrients for one typical item;
+ * the backend scales with quantity / nutritionBaseQuantity (base 1 for count).
  */
+export type PerItemNutrition = {
+  caloriesKcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  fiberG: number;
+};
+
 export type PredefinedIngredient = {
   key: string;
   name: string;
-  /** kcal per 100 g */
+  /** kcal per 100 g (gram mode) */
   caloriesPer100g: number;
   /** g protein per 100 g */
   proteinPer100g: number;
@@ -16,6 +24,15 @@ export type PredefinedIngredient = {
   fatPer100g: number;
   /** g fiber per 100 g */
   fiberPer100g: number;
+  /** If set, the user may enter quantity as whole items (1 egg, 2 bananas, …). */
+  countOption?: {
+    /** One large egg (~50 g), rounded */
+    perUnit: PerItemNutrition;
+    singular: string;
+    plural: string;
+  };
+  /** Used when `countOption` exists — default unit when this ingredient is selected */
+  preferredQuantityUnit?: "grams" | "count";
 };
 
 export const PREDEFINED_INGREDIENTS: readonly PredefinedIngredient[] = [
@@ -37,6 +54,18 @@ export const PREDEFINED_INGREDIENTS: readonly PredefinedIngredient[] = [
     carbsPer100g: 1.1,
     fatPer100g: 11,
     fiberPer100g: 0,
+    preferredQuantityUnit: "count",
+    countOption: {
+      singular: "egg",
+      plural: "eggs",
+      perUnit: {
+        caloriesKcal: 72,
+        proteinG: 6.3,
+        carbsG: 0.4,
+        fatG: 5,
+        fiberG: 0,
+      },
+    },
   },
   {
     key: "salmon_fillet",
@@ -128,6 +157,18 @@ export const PREDEFINED_INGREDIENTS: readonly PredefinedIngredient[] = [
     carbsPer100g: 23,
     fatPer100g: 0.3,
     fiberPer100g: 2.6,
+    preferredQuantityUnit: "count",
+    countOption: {
+      singular: "banana",
+      plural: "bananas",
+      perUnit: {
+        caloriesKcal: 105,
+        proteinG: 1.3,
+        carbsG: 27,
+        fatG: 0.4,
+        fiberG: 3.1,
+      },
+    },
   },
   {
     key: "lentils_cooked",
@@ -195,3 +236,21 @@ export const PREDEFINED_INGREDIENTS: readonly PredefinedIngredient[] = [
     fiberPer100g: 0,
   },
 ] as const;
+
+export function getPresetByKey(key: string): PredefinedIngredient | undefined {
+  return PREDEFINED_INGREDIENTS.find((p) => p.key === key);
+}
+
+export function defaultQuantityFieldsForPreset(
+  key: string,
+): { quantity: string; quantityUnit: "grams" | "count" } {
+  const preset = getPresetByKey(key);
+  if (!preset?.countOption) {
+    return { quantity: "100", quantityUnit: "grams" };
+  }
+  const unit = preset.preferredQuantityUnit ?? "count";
+  if (unit === "count") {
+    return { quantity: "1", quantityUnit: "count" };
+  }
+  return { quantity: "100", quantityUnit: "grams" };
+}

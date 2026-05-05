@@ -39,9 +39,8 @@ export function fetchUsers(): Promise<ApiUser[]> {
 export type CreateIngredientPayload = {
   name: string;
   quantity: number;
-  /** always "grams" for the predefined ingredient flow */
   quantityUnit: "grams" | "count";
-  /** nutrition values are expressed per this many grams (100 for per-100g data) */
+  /** Nutrition fields are per this many grams (100) or per this many items (1 for count). */
   nutritionBaseQuantity: number;
   proteinG: number;
   carbsG: number;
@@ -54,6 +53,8 @@ export type CreateMealPayload = {
   title: string;
   description?: string;
   isVegetarian?: boolean;
+  /** HTTPS URL or `data:image/...;base64,...` from a local file pick. */
+  image?: string | null;
   ingredients?: CreateIngredientPayload[];
 };
 

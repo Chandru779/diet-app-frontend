@@ -10,7 +10,8 @@ export type ApiMealIngredient = {
   mealId: string;
   name: string;
   quantity: number;
-  unit: string | null;
+  /** How `quantity` is interpreted: weight in g, or item count */
+  quantityUnit: "grams" | "count";
   proteinG: number;
   carbsG: number;
   fatG: number;
