@@ -8,6 +8,7 @@ export type ApiUser = {
 export type ApiMealIngredient = {
   id: string;
   mealId: string;
+  mealCatalogId?: string | null;
   name: string;
   quantity: number;
   /** How `quantity` is interpreted: weight in g, or item count */

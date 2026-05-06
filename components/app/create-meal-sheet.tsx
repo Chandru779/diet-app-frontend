@@ -1,23 +1,33 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { createPortal } from "react-dom";
 import {
   AlertCircle,
   Check,
+  ChevronsUpDown,
   ImagePlus,
+  Loader2,
   Plus,
+  Search,
   Trash2,
   X,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useFeedStore } from "@/lib/store/feed-store";
 import {
-  PREDEFINED_INGREDIENTS,
-  defaultQuantityFieldsForPreset,
-  getPresetByKey,
-} from "@/lib/constants/predefined-ingredients";
+  defaultQuantityFieldsForCatalogItem,
+  getCatalogItemByKey,
+  type MealCatalogItem,
+} from "@/lib/types/meal-catalog";
 import { NUTRIENT_COLORS } from "@/lib/constants/nutrients";
-import { createMeal } from "@/lib/api/meal";
+import { createMeal, fetchMealCatalog } from "@/lib/api/meal";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -25,14 +35,21 @@ type IngredientRow = {
   id: string;
   ingredientKey: string;
   quantity: string;
-  quantityUnit: "grams" | "count";
+  quantityUnit: "grams" | "count" | "ml";
 };
 
-function rowIsNutritionValid(r: IngredientRow): boolean {
+function rowIsNutritionValid(
+  catalog: readonly MealCatalogItem[],
+  r: IngredientRow,
+): boolean {
   const qty = parseFloat(r.quantity);
-  if (!r.ingredientKey || !qty || qty <= 0) return false;
+  const item = getCatalogItemByKey(catalog, r.ingredientKey);
+  if (!r.ingredientKey || !item || !qty || qty <= 0) return false;
   if (r.quantityUnit === "count") {
-    return Boolean(getPresetByKey(r.ingredientKey)?.countOption);
+    return Boolean(item.countOption);
+  }
+  if (r.quantityUnit === "ml") {
+    return item.densityGPerMl != null && item.densityGPerMl > 0;
   }
   return true;
 }
@@ -49,6 +66,7 @@ function round1(n: number) {
 
 const QUICK_GRAMS = [50, 100, 150, 200, 250] as const;
 const QUICK_COUNT = [1, 2, 3, 4] as const;
+const QUICK_ML = [50, 100, 150, 200, 250] as const;
 
 const MEAL_IMAGE_MAX_BYTES = 2 * 1024 * 1024;
 
@@ -82,6 +100,11 @@ export function CreateMealSheet() {
     null,
   );
   const mealImageInputRef = useRef<HTMLInputElement>(null);
+  /** Full catalog (GET /meals/catalog with no query) — used for resolution & macro math. */
+  const [catalog, setCatalog] = useState<MealCatalogItem[]>([]);
+  const [catalogStatus, setCatalogStatus] = useState<
+    "idle" | "loading" | "ok" | "error"
+  >("idle");
 
   // Lock body scroll while sheet is open
   useEffect(() => {
@@ -102,6 +125,31 @@ export function CreateMealSheet() {
     return () => URL.revokeObjectURL(url);
   }, [mealImageFile]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let cancelled = false;
+    setCatalogStatus("loading");
+
+    fetchMealCatalog()
+      .then((items) => {
+        if (!cancelled) {
+          setCatalog(items);
+          setCatalogStatus("ok");
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCatalog([]);
+          setCatalogStatus("error");
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
+
   // ── Derived state ──────────────────────────────────────────────────────────
 
   const liveTotal = useMemo(() => {
@@ -110,7 +158,7 @@ export function CreateMealSheet() {
       fatG = 0,
       caloriesKcal = 0;
     for (const row of rows) {
-      const preset = getPresetByKey(row.ingredientKey);
+      const preset = getCatalogItemByKey(catalog, row.ingredientKey);
       const qty = parseFloat(row.quantity);
       if (!preset || !qty || qty <= 0) continue;
       if (row.quantityUnit === "count") {
@@ -120,6 +168,14 @@ export function CreateMealSheet() {
         carbsG += per.carbsG * qty;
         fatG += per.fatG * qty;
         caloriesKcal += per.caloriesKcal * qty;
+      } else if (row.quantityUnit === "ml") {
+        const d = preset.densityGPerMl;
+        if (!d) continue;
+        const f = (qty * d) / 100;
+        proteinG += preset.proteinPer100g * f;
+        carbsG += preset.carbsPer100g * f;
+        fatG += preset.fatPer100g * f;
+        caloriesKcal += preset.caloriesPer100g * f;
       } else {
         const f = qty / 100;
         proteinG += preset.proteinPer100g * f;
@@ -134,10 +190,15 @@ export function CreateMealSheet() {
       fatG: round1(fatG),
       caloriesKcal: Math.round(caloriesKcal),
     };
-  }, [rows]);
+  }, [rows, catalog]);
 
-  const hasValidRows = rows.some(rowIsNutritionValid);
-  const canSubmit = title.trim().length > 0 && hasValidRows && !submitting;
+  const hasValidRows = rows.some((r) => rowIsNutritionValid(catalog, r));
+  const canSubmit =
+    title.trim().length > 0 &&
+    catalogStatus === "ok" &&
+    catalog.length > 0 &&
+    hasValidRows &&
+    !submitting;
 
   // ── Row helpers ────────────────────────────────────────────────────────────
 
@@ -157,18 +218,20 @@ export function CreateMealSheet() {
         if (!ingredientKey) {
           return { ...r, ingredientKey: "" };
         }
+        const item = getCatalogItemByKey(catalog, ingredientKey);
         const { quantity, quantityUnit } =
-          defaultQuantityFieldsForPreset(ingredientKey);
+          defaultQuantityFieldsForCatalogItem(item);
         return { ...r, ingredientKey, quantity, quantityUnit };
       }),
     );
 
-  const setRowQuantityUnit = (id: string, quantityUnit: "grams" | "count") =>
+  const setRowQuantityUnit = (id: string, quantityUnit: "grams" | "count" | "ml") =>
     setRows((prev) =>
       prev.map((r) => {
         if (r.id !== id) return r;
-        const preset = getPresetByKey(r.ingredientKey);
+        const preset = getCatalogItemByKey(catalog, r.ingredientKey);
         if (quantityUnit === "count" && !preset?.countOption) return r;
+        if (quantityUnit === "ml" && !preset?.densityGPerMl) return r;
         return {
           ...r,
           quantityUnit,
@@ -221,7 +284,7 @@ export function CreateMealSheet() {
     setSubmitting(true);
     setError(null);
 
-    const validRows = rows.filter(rowIsNutritionValid);
+    const validRows = rows.filter((r) => rowIsNutritionValid(catalog, r));
 
     let image: string | undefined;
     if (mealImageFile) {
@@ -239,34 +302,11 @@ export function CreateMealSheet() {
       description: description.trim() || undefined,
       isVegetarian: true,
       ...(image ? { image } : {}),
-      ingredients: validRows.map((row) => {
-        const preset = getPresetByKey(row.ingredientKey)!;
-        if (row.quantityUnit === "count") {
-          const per = preset.countOption!.perUnit;
-          return {
-            name: preset.name,
-            quantity: parseFloat(row.quantity),
-            quantityUnit: "count" as const,
-            nutritionBaseQuantity: 1,
-            proteinG: per.proteinG,
-            carbsG: per.carbsG,
-            fatG: per.fatG,
-            caloriesKcal: per.caloriesKcal,
-            fiberG: per.fiberG,
-          };
-        }
-        return {
-          name: preset.name,
-          quantity: parseFloat(row.quantity),
-          quantityUnit: "grams" as const,
-          nutritionBaseQuantity: 100,
-          proteinG: preset.proteinPer100g,
-          carbsG: preset.carbsPer100g,
-          fatG: preset.fatPer100g,
-          caloriesKcal: preset.caloriesPer100g,
-          fiberG: preset.fiberPer100g,
-        };
-      }),
+      ingredients: validRows.map((row) => ({
+        catalogItemKey: row.ingredientKey,
+        quantity: parseFloat(row.quantity),
+        quantityUnit: row.quantityUnit,
+      })),
     };
 
     try {
@@ -369,15 +409,15 @@ export function CreateMealSheet() {
           </div>
 
           {/* Ingredients */}
-          <div>
-            <div className="mb-2 flex items-center justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-2">
               <label className="text-sm font-semibold text-foreground">
                 Ingredients{" "}
                 <span className="text-rose-500" aria-hidden>
                   *
                 </span>
               </label>
-              <span className="rounded-md bg-muted/80 px-2 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
+              <span className="shrink-0 rounded-md bg-muted/80 px-2 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
                 {rows.length} item{rows.length === 1 ? "" : "s"}
               </span>
             </div>
@@ -390,6 +430,8 @@ export function CreateMealSheet() {
               {rows.map((row, idx) => (
                 <IngredientRowWidget
                   key={row.id}
+                  catalog={catalog}
+                  catalogStatus={catalogStatus}
                   row={row}
                   position={idx + 1}
                   total={rows.length}
@@ -407,12 +449,23 @@ export function CreateMealSheet() {
             <button
               type="button"
               onClick={addRow}
-              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-2.5 text-sm font-medium text-muted-foreground transition hover:border-primary/50 hover:bg-primary/5 hover:text-primary"
+              disabled={catalogStatus === "idle" || catalogStatus === "loading"}
+              className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-2.5 text-sm font-medium text-muted-foreground transition hover:border-primary/50 hover:bg-primary/5 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Plus className="size-4" />
               Add ingredient
             </button>
           </div>
+
+          {catalogStatus === "error" ? (
+            <div className="flex items-start gap-2.5 rounded-xl border border-destructive/25 bg-destructive/5 px-4 py-3">
+              <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
+              <p className="text-sm text-destructive">
+                Could not load ingredient list. Check your connection and try
+                closing and reopening this sheet.
+              </p>
+            </div>
+          ) : null}
 
           {/* Shown once there is at least one valid ingredient: between ingredients and macro summary */}
           {hasValidRows ? (
@@ -587,20 +640,273 @@ export function CreateMealSheet() {
   );
 }
 
+// ── Catalog combobox (search + list; empty query uses full catalog from parent) ─
+
+type IngredientCatalogComboboxProps = {
+  allCatalog: readonly MealCatalogItem[];
+  bootstrapStatus: "idle" | "loading" | "ok" | "error";
+  valueKey: string;
+  onSelectKey: (key: string) => void;
+};
+
+function IngredientCatalogCombobox({
+  allCatalog,
+  bootstrapStatus,
+  valueKey,
+  onSelectKey,
+}: IngredientCatalogComboboxProps) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [remoteList, setRemoteList] = useState<MealCatalogItem[]>([]);
+  const [searchStatus, setSearchStatus] = useState<
+    "idle" | "loading" | "ok" | "error"
+  >("idle");
+  const [panelBox, setPanelBox] = useState<{
+    top: number;
+    left: number;
+    width: number;
+    maxHeight: number;
+  } | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const portalPanelRef = useRef<HTMLDivElement>(null);
+
+  const trimmed = query.trim();
+  const showRemote = trimmed.length > 0;
+
+  const selected =
+    getCatalogItemByKey(allCatalog, valueKey) ??
+    getCatalogItemByKey(remoteList, valueKey);
+
+  function updatePanelPosition() {
+    const el = rootRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const margin = 8;
+    const maxHeight = Math.max(
+      120,
+      Math.min(256, window.innerHeight - r.bottom - margin * 2),
+    );
+    setPanelBox({
+      top: r.bottom + 4,
+      left: r.left,
+      width: r.width,
+      maxHeight,
+    });
+  }
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setPanelBox(null);
+      return;
+    }
+    updatePanelPosition();
+  }, [open, valueKey]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onReposition = () => updatePanelPosition();
+    window.addEventListener("resize", onReposition);
+    window.addEventListener("scroll", onReposition, true);
+    return () => {
+      window.removeEventListener("resize", onReposition);
+      window.removeEventListener("scroll", onReposition, true);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    function onDocMouseDown(e: MouseEvent) {
+      const t = e.target as Node;
+      if (rootRef.current?.contains(t)) return;
+      if (portalPanelRef.current?.contains(t)) return;
+      setOpen(false);
+      setQuery("");
+    }
+    document.addEventListener("mousedown", onDocMouseDown);
+    return () => document.removeEventListener("mousedown", onDocMouseDown);
+  }, []);
+
+  useEffect(() => {
+    if (!showRemote) {
+      setRemoteList([]);
+      setSearchStatus("idle");
+      return;
+    }
+    let cancelled = false;
+    setSearchStatus("loading");
+    const t = setTimeout(() => {
+      fetchMealCatalog(trimmed)
+        .then((items) => {
+          if (!cancelled) {
+            setRemoteList(items);
+            setSearchStatus("ok");
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setRemoteList([]);
+            setSearchStatus("error");
+          }
+        });
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [trimmed]);
+
+  const options: MealCatalogItem[] = showRemote ? remoteList : [...allCatalog];
+
+  const listLoading =
+    bootstrapStatus === "loading" ||
+    (showRemote && searchStatus === "loading");
+  const listError =
+    bootstrapStatus === "error" || (showRemote && searchStatus === "error");
+  const searchInputBusy = showRemote && searchStatus === "loading";
+
+  const triggerDisabled =
+    bootstrapStatus !== "ok" || allCatalog.length === 0;
+
+  const dropdown =
+    open && !triggerDisabled && panelBox
+      ? createPortal(
+          <div
+            ref={portalPanelRef}
+            className="fixed z-[80] flex flex-col overflow-hidden rounded-lg border border-border bg-background shadow-lg"
+            style={{
+              top: panelBox.top,
+              left: panelBox.left,
+              width: panelBox.width,
+              maxHeight: panelBox.maxHeight,
+            }}
+            role="listbox"
+          >
+            <div className="shrink-0 border-b border-border/70 p-2">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search…"
+                  autoFocus
+                  aria-label="Filter ingredients"
+                  className="h-9 w-full rounded-md border border-input bg-background pl-9 pr-9 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                />
+                {searchInputBusy ? (
+                  <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2">
+                    <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                  </span>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain py-1">
+              {listError && showRemote ? (
+                <p className="px-3 py-2 text-xs text-destructive">
+                  Could not search. Try again.
+                </p>
+              ) : null}
+              {showRemote && searchStatus === "loading" ? (
+                <p className="flex items-center gap-2 px-3 py-3 text-xs text-muted-foreground">
+                  <Loader2 className="size-3.5 shrink-0 animate-spin" />
+                  Searching…
+                </p>
+              ) : null}
+              {!listLoading &&
+              !listError &&
+              options.length === 0 &&
+              showRemote ? (
+                <p className="px-3 py-2 text-xs text-muted-foreground">
+                  No matches for &ldquo;{trimmed}&rdquo;
+                </p>
+              ) : null}
+              {!listLoading && !showRemote && options.length === 0 ? (
+                <p className="px-3 py-2 text-xs text-muted-foreground">
+                  No ingredients in catalog.
+                </p>
+              ) : null}
+
+              {!(showRemote && searchStatus === "loading")
+                ? options.map((p) => (
+                    <button
+                      key={p.key}
+                      type="button"
+                      role="option"
+                      aria-selected={p.key === valueKey}
+                      onClick={() => {
+                        onSelectKey(p.key);
+                        setOpen(false);
+                        setQuery("");
+                      }}
+                      className={`flex w-full items-center px-3 py-2 text-left text-sm transition hover:bg-muted/80 ${
+                        p.key === valueKey
+                          ? "bg-primary/10 font-medium text-primary"
+                          : ""
+                      }`}
+                    >
+                      {p.name}
+                    </button>
+                  ))
+                : null}
+            </div>
+          </div>,
+          document.body,
+        )
+      : null;
+
+  return (
+    <div ref={rootRef} className="relative w-full">
+      <button
+        type="button"
+        disabled={triggerDisabled}
+        onClick={() => {
+          if (triggerDisabled) return;
+          setOpen((o) => {
+            if (o) setQuery("");
+            return !o;
+          });
+        }}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        className="flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-input bg-background px-3 text-left text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <span
+          className={`min-w-0 flex-1 truncate ${valueKey ? "text-foreground" : "text-muted-foreground"}`}
+        >
+          {bootstrapStatus === "loading"
+            ? "Loading ingredients…"
+            : bootstrapStatus === "error"
+              ? "Ingredients unavailable"
+              : valueKey
+                ? (selected?.name ?? valueKey)
+                : "Choose ingredient…"}
+        </span>
+        <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground opacity-70" />
+      </button>
+
+      {dropdown}
+    </div>
+  );
+}
+
 // ── Ingredient row widget ────────────────────────────────────────────────────
 
 type IngredientRowWidgetProps = {
+  catalog: readonly MealCatalogItem[];
+  catalogStatus: "idle" | "loading" | "ok" | "error";
   row: IngredientRow;
   position: number;
   total: number;
   canRemove: boolean;
   onIngredientChange: (key: string) => void;
   onQtyChange: (qty: string) => void;
-  onQuantityUnitChange: (unit: "grams" | "count") => void;
+  onQuantityUnitChange: (unit: "grams" | "count" | "ml") => void;
   onRemove: () => void;
 };
 
 function IngredientRowWidget({
+  catalog,
+  catalogStatus,
   row,
   position,
   total,
@@ -610,8 +916,9 @@ function IngredientRowWidget({
   onQuantityUnitChange,
   onRemove,
 }: IngredientRowWidgetProps) {
-  const preset = getPresetByKey(row.ingredientKey);
+  const preset = getCatalogItemByKey(catalog, row.ingredientKey);
   const countOpt = preset?.countOption;
+  const canMl = preset?.densityGPerMl != null && preset.densityGPerMl > 0;
   const countLabel =
     row.quantityUnit === "count" && countOpt
       ? parseFloat(row.quantity) === 1
@@ -623,26 +930,20 @@ function IngredientRowWidget({
     <div
       role="listitem"
       aria-label={`Ingredient ${position} of ${total}`}
-      className="border-b border-border/60 px-3 py-2.5 last:border-b-0 sm:px-3.5"
+      className="border-b border-border/60 px-3 py-3 last:border-b-0 sm:px-3.5"
     >
-      <div className="flex gap-2.5">
-        <div className="min-w-0 flex-1 space-y-1.5">
-          <select
-            value={row.ingredientKey}
-            onChange={(e) => onIngredientChange(e.target.value)}
-            className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
-          >
-            <option value="">Choose ingredient…</option>
-            {PREDEFINED_INGREDIENTS.map((p) => (
-              <option key={p.key} value={p.key}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+      <div className="flex gap-3">
+        <div className="min-w-0 flex-1 space-y-2">
+          <IngredientCatalogCombobox
+            allCatalog={catalog}
+            bootstrapStatus={catalogStatus}
+            valueKey={row.ingredientKey}
+            onSelectKey={onIngredientChange}
+          />
 
-          {countOpt ? (
+          {countOpt || canMl ? (
             <div
-              className="mb-1.5 inline-flex rounded-lg border border-border/70 bg-muted/20 p-0.5"
+              className="inline-flex rounded-lg border border-border/70 bg-muted/20 p-0.5"
               role="group"
               aria-label="Quantity unit"
             >
@@ -657,17 +958,32 @@ function IngredientRowWidget({
               >
                 g
               </button>
-              <button
-                type="button"
-                onClick={() => onQuantityUnitChange("count")}
-                className={`rounded-md px-2.5 py-1 text-[11px] font-semibold capitalize transition ${
-                  row.quantityUnit === "count"
-                    ? "bg-background text-primary shadow-sm ring-1 ring-primary/20"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {countOpt.plural}
-              </button>
+              {countOpt ? (
+                <button
+                  type="button"
+                  onClick={() => onQuantityUnitChange("count")}
+                  className={`rounded-md px-2.5 py-1 text-[11px] font-semibold capitalize transition ${
+                    row.quantityUnit === "count"
+                      ? "bg-background text-primary shadow-sm ring-1 ring-primary/20"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {countOpt.plural}
+                </button>
+              ) : null}
+              {canMl ? (
+                <button
+                  type="button"
+                  onClick={() => onQuantityUnitChange("ml")}
+                  className={`rounded-md px-2.5 py-1 text-[11px] font-semibold transition ${
+                    row.quantityUnit === "ml"
+                      ? "bg-background text-primary shadow-sm ring-1 ring-primary/20"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  ml
+                </button>
+              ) : null}
             </div>
           ) : null}
 
@@ -682,12 +998,18 @@ function IngredientRowWidget({
                 aria-label={
                   row.quantityUnit === "count"
                     ? `Number of ${countOpt?.plural ?? "items"}`
-                    : "Weight in grams"
+                    : row.quantityUnit === "ml"
+                      ? "Volume in milliliters"
+                      : "Weight in grams"
                 }
                 className="h-8 w-[4.5rem] rounded-lg border border-input bg-background py-0 pl-2.5 pr-7 text-sm tabular-nums outline-none transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0"
               />
               <span className="pointer-events-none absolute right-2 top-1/2 max-w-[3rem] -translate-y-1/2 truncate text-[11px] font-medium text-muted-foreground">
-                {row.quantityUnit === "count" ? (countLabel ?? "ct") : "g"}
+                {row.quantityUnit === "count"
+                  ? (countLabel ?? "ct")
+                  : row.quantityUnit === "ml"
+                    ? "ml"
+                    : "g"}
               </span>
             </div>
 
@@ -697,10 +1019,18 @@ function IngredientRowWidget({
               aria-label={
                 row.quantityUnit === "count"
                   ? "Quick amounts"
-                  : "Quick gram amounts"
+                  : row.quantityUnit === "ml"
+                    ? "Quick ml amounts"
+                    : "Quick gram amounts"
               }
             >
-              {(row.quantityUnit === "count" ? QUICK_COUNT : QUICK_GRAMS).map(
+              {(
+                row.quantityUnit === "count"
+                  ? QUICK_COUNT
+                  : row.quantityUnit === "ml"
+                    ? QUICK_ML
+                    : QUICK_GRAMS
+              ).map(
                 (n) => {
                   const active = row.quantity === String(n);
                   return (
@@ -722,9 +1052,9 @@ function IngredientRowWidget({
             </div>
           </div>
 
-          {rowIsNutritionValid(row) ? (
+          {rowIsNutritionValid(catalog, row) ? (
             <NutritionHint
-              ingredientKey={row.ingredientKey}
+              item={preset!}
               quantity={parseFloat(row.quantity)}
               quantityUnit={row.quantityUnit}
             />
@@ -749,33 +1079,38 @@ function IngredientRowWidget({
 // ── Nutrition hint ───────────────────────────────────────────────────────────
 
 function NutritionHint({
-  ingredientKey,
+  item,
   quantity,
   quantityUnit,
 }: {
-  ingredientKey: string;
+  item: MealCatalogItem;
   quantity: number;
-  quantityUnit: "grams" | "count";
+  quantityUnit: "grams" | "count" | "ml";
 }) {
-  const preset = getPresetByKey(ingredientKey);
-  if (!preset) return null;
-
   let p: number;
   let c: number;
   let fa: number;
   let cal: number;
-  if (quantityUnit === "count" && preset.countOption) {
-    const u = preset.countOption.perUnit;
+  if (quantityUnit === "count" && item.countOption) {
+    const u = item.countOption.perUnit;
     p = round1(u.proteinG * quantity);
     c = round1(u.carbsG * quantity);
     fa = round1(u.fatG * quantity);
     cal = Math.round(u.caloriesKcal * quantity);
+  } else if (quantityUnit === "ml") {
+    const d = item.densityGPerMl;
+    if (!d) return null;
+    const f = (quantity * d) / 100;
+    p = round1(item.proteinPer100g * f);
+    c = round1(item.carbsPer100g * f);
+    fa = round1(item.fatPer100g * f);
+    cal = Math.round(item.caloriesPer100g * f);
   } else {
     const f = quantity / 100;
-    p = round1(preset.proteinPer100g * f);
-    c = round1(preset.carbsPer100g * f);
-    fa = round1(preset.fatPer100g * f);
-    cal = Math.round(preset.caloriesPer100g * f);
+    p = round1(item.proteinPer100g * f);
+    c = round1(item.carbsPer100g * f);
+    fa = round1(item.fatPer100g * f);
+    cal = Math.round(item.caloriesPer100g * f);
   }
 
   return (

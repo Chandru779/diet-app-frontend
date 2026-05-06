@@ -1,4 +1,5 @@
 import { http } from "./http";
+import type { MealCatalogItem } from "@/lib/types/meal-catalog";
 import type { ApiMeal, ApiUser } from "@/lib/types/meal";
 
 // ── Read endpoints ───────────────────────────────────────────────────────────
@@ -9,6 +10,17 @@ import type { ApiMeal, ApiUser } from "@/lib/types/meal";
  */
 export async function fetchMeals(): Promise<ApiMeal[]> {
   const res = await http.get<ApiMeal[]>("/meals", { headers: { "Cache-Control": "no-store" } });
+  return res.data;
+}
+
+/** GET /meals/catalog — reference ingredients for meal builder. */
+export async function fetchMealCatalog(search?: string): Promise<MealCatalogItem[]> {
+  const params =
+    search != null && search.trim().length > 0 ? { q: search.trim() } : {};
+  const res = await http.get<MealCatalogItem[]>("/meals/catalog", {
+    params,
+    headers: { "Cache-Control": "no-store" },
+  });
   return res.data;
 }
 
@@ -37,16 +49,9 @@ export function fetchUsers(): Promise<ApiUser[]> {
 // ── Write endpoints ──────────────────────────────────────────────────────────
 
 export type CreateIngredientPayload = {
-  name: string;
+  catalogItemKey: string;
   quantity: number;
-  quantityUnit: "grams" | "count";
-  /** Nutrition fields are per this many grams (100) or per this many items (1 for count). */
-  nutritionBaseQuantity: number;
-  proteinG: number;
-  carbsG: number;
-  fatG: number;
-  caloriesKcal: number;
-  fiberG?: number;
+  quantityUnit: "grams" | "count" | "ml";
 };
 
 export type CreateMealPayload = {
