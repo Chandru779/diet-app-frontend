@@ -1,6 +1,6 @@
 import { http } from "./http";
 import type { MealCatalogItem } from "@/lib/types/meal-catalog";
-import type { ApiMeal, ApiUser } from "@/lib/types/meal";
+import type { ApiMeal } from "@/lib/types/meal";
 
 // ── Read endpoints ───────────────────────────────────────────────────────────
 
@@ -12,6 +12,24 @@ export async function fetchMeals(): Promise<ApiMeal[]> {
   const res = await http.get<ApiMeal[]>("/meals", { headers: { "Cache-Control": "no-store" } });
   return res.data;
 }
+
+/** GET /meals/user/:userId — meals belonging to a user identified by UUID. */
+export async function fetchMealsByUserId(userId: string): Promise<ApiMeal[]> {
+  const res = await http.get<ApiMeal[]>(`/meals/user/${userId}`, {
+    headers: { "Cache-Control": "no-store" },
+  });
+  return res.data;
+}
+
+/** GET /meals/user/by-username/:username — fallback when UUID is unavailable. */
+export async function fetchMealsByUsername(username: string): Promise<ApiMeal[]> {
+  const res = await http.get<ApiMeal[]>(
+    `/meals/user/by-username/${encodeURIComponent(username)}`,
+    { headers: { "Cache-Control": "no-store" } },
+  );
+  return res.data;
+}
+
 
 /** GET /meals/catalog — reference ingredients for meal builder. */
 export async function fetchMealCatalog(search?: string): Promise<MealCatalogItem[]> {
@@ -42,10 +60,6 @@ export async function fetchMealById(id: string): Promise<ApiMeal> {
   return meal;
 }
 
-export function fetchUsers(): Promise<ApiUser[]> {
-  return http.get<ApiUser[]>("/users", { headers: { "Cache-Control": "no-store" } }).then(r => r.data);
-}
-
 // ── Write endpoints ──────────────────────────────────────────────────────────
 
 export type CreateIngredientPayload = {
@@ -64,15 +78,11 @@ export type CreateMealPayload = {
 };
 
 /**
- * POST /meals — requires a Bearer token.
- * The DummyBearerAuthGuard accepts any non-empty token value.
+ * POST /meals — requires a Bearer token (from session cookie via `http` interceptor).
  */
 export async function createMeal(
   payload: CreateMealPayload,
-  token: string,
 ): Promise<ApiMeal> {
-  const res = await http.post<ApiMeal>("/meals", payload, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const res = await http.post<ApiMeal>("/meals", payload);
   return res.data;
 }

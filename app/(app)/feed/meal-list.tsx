@@ -7,6 +7,7 @@ import { FeedSearch } from "@/components/app/feed-search";
 import { MealEmptyIllustration } from "@/components/app/meal-empty-illustration";
 import { MealLoadingIllustration } from "@/components/app/meal-loading-illustration";
 import { fetchMeals } from "@/lib/api/meal";
+import { deriveDisplayName } from "@/lib/auth/display-name";
 import { useFeedStore } from "@/lib/store/feed-store";
 import { useAuthStore } from "@/lib/store/auth-store";
 import type { ApiMeal } from "@/lib/types/meal";
@@ -21,7 +22,7 @@ function getGreeting() {
 export function MealList() {
   const refreshKey = useFeedStore((s) => s.refreshKey);
   const openCreateSheet = useFeedStore((s) => s.openCreateSheet);
-  const displayName = useAuthStore((s) => s.displayName);
+  const username = useAuthStore((s) => s.user?.username);
   const [query, setQuery] = useState("");
   const [meals, setMeals] = useState<ApiMeal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,8 +66,9 @@ export function MealList() {
     });
   }, [query, meals]);
 
-  const headline = displayName
-    ? `Hey, ${displayName.split("-")[0]} 👋`
+  const { firstName } = deriveDisplayName(username);
+  const headline = username
+    ? `Hey, ${firstName} 👋`
     : "What's on your plate?";
 
   const listEmpty = !loading && !error && meals.length === 0;

@@ -19,7 +19,6 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useAuthStore } from "@/lib/store/auth-store";
 import { useFeedStore } from "@/lib/store/feed-store";
 import {
   defaultQuantityFieldsForCatalogItem,
@@ -83,7 +82,6 @@ function readFileAsDataURL(file: File): Promise<string> {
 // ── Main component ───────────────────────────────────────────────────────────
 
 export function CreateMealSheet() {
-  const displayName = useAuthStore((s) => s.displayName);
   const bumpRefresh = useFeedStore((s) => s.bumpRefresh);
   const isOpen = useFeedStore((s) => s.isCreateSheetOpen);
   const closeStoreSheet = useFeedStore((s) => s.closeCreateSheet);
@@ -310,7 +308,7 @@ export function CreateMealSheet() {
     };
 
     try {
-      await createMeal(payload, displayName ?? "guest");
+      await createMeal(payload);
       setSuccess(true);
       bumpRefresh();
       setTimeout(close, 900);

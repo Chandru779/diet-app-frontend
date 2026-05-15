@@ -1,76 +1,136 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Home, Plus, User } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Bookmark, ClipboardList, Home, Plus, User } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { getAuthAccessTokenFromCookie } from "@/lib/auth/auth-cookie";
+import { useAuthStore } from "@/lib/store/auth-store";
 import { useFeedStore } from "@/lib/store/feed-store";
+
+// ── NavTab ────────────────────────────────────────────────────────────────────
+
+function NavTab({
+  href,
+  label,
+  icon: Icon,
+  active,
+}: {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  active: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex min-w-0 max-w-full flex-col items-center justify-end gap-0.5"
+      aria-current={active ? "page" : undefined}
+      aria-label={label}
+    >
+      <span
+        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl transition-all duration-200 ${active
+          ? "bg-primary text-primary-foreground shadow-[0_2px_10px_rgba(0,0,0,0.18)]"
+          : "text-muted-foreground/70 hover:bg-muted hover:text-foreground"
+          }`}
+      >
+        <Icon className="size-6" strokeWidth={active ? 2.25 : 2} />
+      </span>
+      <span
+        className={`max-w-full truncate text-center text-[10px] font-medium leading-tight tracking-tight transition-colors duration-200 ${active ? "text-primary" : "text-muted-foreground/55"
+          }`}
+      >
+        {label}
+      </span>
+    </Link>
+  );
+}
+
+// ── BottomNav ─────────────────────────────────────────────────────────────────
 
 export function BottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const openCreateSheet = useFeedStore((s) => s.openCreateSheet);
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+
+  function handleLogMeal() {
+    const authed = isLoggedIn && Boolean(getAuthAccessTokenFromCookie());
+    if (!authed) {
+      router.push("/login");
+      return;
+    }
+    openCreateSheet();
+  }
 
   const homeActive = pathname === "/feed" || pathname.startsWith("/feed/");
+  const myMealsActive =
+    pathname === "/my-meals" || pathname.startsWith("/my-meals/");
+  const savedActive =
+    pathname === "/saved" || pathname.startsWith("/saved/");
   const profileActive = pathname.startsWith("/profile");
 
   return (
-    <nav
-      className="fixed inset-x-0 bottom-0 z-40 rounded-t-[1.75rem] bg-white"
-      style={{ boxShadow: "0 -2px 20px rgba(0,0,0,0.07)" }}
-    >
-      <div className="mx-auto flex max-w-2xl items-center justify-around pb-safe px-10 pt-2 pb-4">
-        {/* Home */}
-        <Link
-          href="/feed"
-          className="flex flex-col items-center gap-1"
-          aria-label="Home"
-        >
-          <span
-            className={`flex h-10 w-10 items-center justify-center rounded-2xl transition ${
-              homeActive
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            <Home className="size-5" />
-          </span>
-          <span
-            className={`text-[10px] font-semibold ${homeActive ? "text-primary" : "text-muted-foreground"}`}
-          >
-            Home
-          </span>
-        </Link>
+    <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-40">
+      <div className="pointer-events-auto relative mx-auto max-w-2xl">
+        <div className="rounded-t-3xl bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+          <div className="grid min-h-[72px] grid-cols-5 items-stretch gap-x-1 px-1 py-3 sm:gap-x-2 sm:px-3">
+            <div className="flex h-full min-w-0 flex-col items-center justify-end">
+              <NavTab
+                href="/feed"
+                label="Home"
+                icon={Home}
+                active={homeActive}
+              />
+            </div>
+            <div className="flex h-full min-w-0 flex-col items-center justify-end">
+              <NavTab
+                href="/my-meals"
+                label="My meals"
+                icon={ClipboardList}
+                active={myMealsActive}
+              />
+            </div>
+            <div className="flex h-full min-w-0 flex-col items-center justify-end gap-0.5">
+              <button
+                type="button"
+                onClick={handleLogMeal}
+                aria-label="Log a meal"
+                className="nav-fab flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-primary transition active:scale-95"
+              >
+                <Plus className="size-6" strokeWidth={2.5} />
+              </button>
+              {/* Same line box as NavTab labels so icons share one baseline row */}
+              <span
+                className="invisible max-w-full truncate text-center text-[10px] font-medium leading-tight tracking-tight"
+                aria-hidden
+              >
+                Log
+              </span>
+            </div>
+            <div className="flex h-full min-w-0 flex-col items-center justify-end">
+              <NavTab
+                href="/saved"
+                label="Saved"
+                icon={Bookmark}
+                active={savedActive}
+              />
+            </div>
+            <div className="flex h-full min-w-0 flex-col items-center justify-end">
+              <NavTab
+                href="/profile"
+                label="Profile"
+                icon={User}
+                active={profileActive}
+              />
+            </div>
+          </div>
+        </div>
 
-        {/* FAB */}
-        <button
-          type="button"
-          onClick={openCreateSheet}
-          aria-label="Create new meal"
-          className="flex h-13 w-13 -mt-5 h-[52px] w-[52px] items-center justify-center rounded-full bg-primary text-white shadow-[0_4px_18px_rgba(0,0,0,0.20)] transition hover:opacity-90 active:scale-95"
-        >
-          <Plus className="size-6" strokeWidth={2.5} />
-        </button>
-
-        {/* Profile */}
-        <Link
-          href="/profile"
-          className="flex flex-col items-center gap-1"
-          aria-label="Profile"
-        >
-          <span
-            className={`flex h-10 w-10 items-center justify-center rounded-2xl transition ${
-              profileActive
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            <User className="size-5" />
-          </span>
-          <span
-            className={`text-[10px] font-semibold ${profileActive ? "text-primary" : "text-muted-foreground"}`}
-          >
-            Profile
-          </span>
-        </Link>
+        <div
+          className="bg-white"
+          style={{ height: "env(safe-area-inset-bottom, 0px)" }}
+        />
       </div>
     </nav>
   );

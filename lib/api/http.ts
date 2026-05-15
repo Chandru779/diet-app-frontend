@@ -1,4 +1,5 @@
 import axios, { AxiosError } from "axios";
+import { getAuthAccessTokenFromCookie } from "@/lib/auth/auth-cookie";
 import { getApiBaseUrl } from "./base-url";
 
 type ApiEnvelope<T = unknown> = {
@@ -11,6 +12,14 @@ export const http = axios.create({
   baseURL: getApiBaseUrl(),
   timeout: 20_000,
   headers: { "Content-Type": "application/json" },
+});
+
+http.interceptors.request.use((config) => {
+  const token = getAuthAccessTokenFromCookie();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 http.interceptors.response.use(

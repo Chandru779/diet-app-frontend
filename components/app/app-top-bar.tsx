@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/brand/logo";
+import { deriveDisplayName } from "@/lib/auth/display-name";
 import { useAuthStore } from "@/lib/store/auth-store";
 
 export function AppTopBar() {
   const pathname = usePathname();
-  const displayName = useAuthStore((s) => s.displayName);
-  const initial = displayName ? displayName.charAt(0).toUpperCase() : "?";
+  const username = useAuthStore((s) => s.user?.username);
+  const { initial } = deriveDisplayName(username);
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/40 bg-white">

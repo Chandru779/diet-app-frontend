@@ -7,10 +7,12 @@ export const metadata = {
 export default function LoginPage() {
   return (
     <>
-      <div className="mb-6 text-center">
-        <h1 className="font-heading text-2xl font-bold">Welcome back</h1>
+      <div className="mb-7">
+        <h1 className="font-heading text-2xl font-bold leading-tight text-foreground">
+          Welcome back
+        </h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          Sign in with your username to continue
+          Sign in to pick up where you left off.
         </p>
       </div>
       <LoginForm />

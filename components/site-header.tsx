@@ -1,11 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Logo } from "@/components/brand/logo";
+import { getAuthAccessTokenFromCookie } from "@/lib/auth/auth-cookie";
 import { useAuthStore } from "@/lib/store/auth-store";
 
 export function SiteHeader() {
-  const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+  const router = useRouter();
+  const isLoggedIn =
+    useAuthStore((s) => s.isLoggedIn) && Boolean(getAuthAccessTokenFromCookie());
   const logout = useAuthStore((s) => s.logout);
 
   return (
@@ -29,7 +33,11 @@ export function SiteHeader() {
               </Link>
               <button
                 type="button"
-                onClick={() => logout()}
+                onClick={() => {
+                  logout();
+                  router.push("/login");
+                  router.refresh();
+                }}
                 className="rounded-full px-3 py-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
               >
                 Log out

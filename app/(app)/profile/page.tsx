@@ -1,16 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
+import { RequireAuth } from "@/components/app/require-auth";
+import { deriveDisplayName } from "@/lib/auth/display-name";
 import { useAuthStore } from "@/lib/store/auth-store";
 
-export default function ProfilePage() {
-  const displayName = useAuthStore((s) => s.displayName);
-  const email = useAuthStore((s) => s.email);
+function ProfileContent() {
+  const router = useRouter();
+  const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const username = user?.username;
+  const email = user?.email;
 
-  const initial = displayName ? displayName.charAt(0).toUpperCase() : "?";
-  const firstName = displayName?.split("-")[0] ?? "Guest";
+  const { firstName, initial } = deriveDisplayName(username);
 
   return (
     <div className="pb-10">
@@ -25,9 +29,9 @@ export default function ProfilePage() {
           {/* Name + handle */}
           <div>
             <h1 className="font-heading text-2xl font-bold">{firstName}</h1>
-            {displayName ? (
+            {username ? (
               <p className="mt-0.5 text-xs font-medium text-muted-foreground">
-                @{displayName}
+                @{username}
               </p>
             ) : null}
             {email ? (
@@ -56,7 +60,11 @@ export default function ProfilePage() {
 
         <button
           type="button"
-          onClick={() => logout()}
+          onClick={() => {
+            logout();
+            router.push("/login");
+            router.refresh();
+          }}
           className="flex w-full items-center justify-between rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-4 text-left transition hover:bg-destructive/10"
         >
           <div>
@@ -69,5 +77,16 @@ export default function ProfilePage() {
         </button>
       </div>
     </div>
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <RequireAuth
+      title="Sign in to view your profile"
+      description="Your profile, sign-out, and account settings live behind a quick sign-in."
+    >
+      <ProfileContent />
+    </RequireAuth>
   );
 }

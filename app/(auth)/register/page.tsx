@@ -7,10 +7,12 @@ export const metadata = {
 export default function RegisterPage() {
   return (
     <>
-      <div className="mb-6 text-center">
-        <h1 className="font-heading text-2xl font-bold">Create account</h1>
+      <div className="mb-7">
+        <h1 className="font-heading text-2xl font-bold leading-tight text-foreground">
+          Create your account
+        </h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          Choose a username to get started
+          Just a username to get started — add the rest later.
         </p>
       </div>
       <RegisterForm />
