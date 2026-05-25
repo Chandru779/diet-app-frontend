@@ -26,7 +26,13 @@ import {
   type MealCatalogItem,
 } from "@/lib/types/meal-catalog";
 import { NUTRIENT_COLORS } from "@/lib/constants/nutrients";
+import { uploadMealImage } from "@/lib/api/media";
 import { createMeal, fetchMealCatalog } from "@/lib/api/meal";
+import {
+  buildPreparationStepsPayload,
+  MealPreparationEditor,
+  type PreparationStepRow,
+} from "@/components/app/meal-preparation-editor";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -69,16 +75,6 @@ const QUICK_ML = [50, 100, 150, 200, 250] as const;
 
 const MEAL_IMAGE_MAX_BYTES = 2 * 1024 * 1024;
 
-function readFileAsDataURL(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () =>
-      reject(reader.error ?? new Error("Could not read image"));
-    reader.readAsDataURL(file);
-  });
-}
-
 // ── Main component ───────────────────────────────────────────────────────────
 
 export function CreateMealSheet() {
@@ -103,6 +99,7 @@ export function CreateMealSheet() {
   const [catalogStatus, setCatalogStatus] = useState<
     "idle" | "loading" | "ok" | "error"
   >("idle");
+  const [prepSteps, setPrepSteps] = useState<PreparationStepRow[]>([]);
 
   // Lock body scroll while sheet is open
   useEffect(() => {
@@ -191,6 +188,16 @@ export function CreateMealSheet() {
   }, [rows, catalog]);
 
   const hasValidRows = rows.some((r) => rowIsNutritionValid(catalog, r));
+  const filledIngredientCount = rows.filter((r) => r.ingredientKey.trim()).length;
+  const showPreparation = hasValidRows || filledIngredientCount >= 2;
+
+  useEffect(() => {
+    if (!showPreparation) return;
+    setPrepSteps((prev) =>
+      prev.length === 0 ? [{ id: uid(), text: "" }] : prev,
+    );
+  }, [showPreparation]);
+
   const canSubmit =
     title.trim().length > 0 &&
     catalogStatus === "ok" &&
@@ -252,6 +259,7 @@ export function CreateMealSheet() {
       { id: uid(), ingredientKey: "", quantity: "100", quantityUnit: "grams" },
     ]);
     setMealImageFile(null);
+    setPrepSteps([]);
     setError(null);
     setSuccess(false);
   }
@@ -287,19 +295,26 @@ export function CreateMealSheet() {
     let image: string | undefined;
     if (mealImageFile) {
       try {
-        image = await readFileAsDataURL(mealImageFile);
-      } catch {
-        setError("Could not read the meal photo. Try another image.");
+        image = await uploadMealImage(mealImageFile);
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Could not upload the meal photo. Try again.",
+        );
         setSubmitting(false);
         return;
       }
     }
+
+    const preparationSteps = buildPreparationStepsPayload(prepSteps);
 
     const payload = {
       title: title.trim(),
       description: description.trim() || undefined,
       isVegetarian: true,
       ...(image ? { image } : {}),
+      ...(preparationSteps ? { preparationSteps } : {}),
       ingredients: validRows.map((row) => ({
         catalogItemKey: row.ingredientKey,
         quantity: parseFloat(row.quantity),
@@ -463,6 +478,13 @@ export function CreateMealSheet() {
                 closing and reopening this sheet.
               </p>
             </div>
+          ) : null}
+
+          {showPreparation ? (
+            <MealPreparationEditor
+              steps={prepSteps}
+              onChange={setPrepSteps}
+            />
           ) : null}
 
           {/* Shown once there is at least one valid ingredient: between ingredients and macro summary */}

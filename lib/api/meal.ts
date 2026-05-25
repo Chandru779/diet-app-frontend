@@ -1,6 +1,7 @@
 import { http } from "./http";
 import type { MealCatalogItem } from "@/lib/types/meal-catalog";
-import type { ApiMeal } from "@/lib/types/meal";
+import type { MealFilterCategory } from "@/lib/types/meal-filter";
+import type { ApiMeal, MealPreparationStep, MealType } from "@/lib/types/meal";
 
 // ── Read endpoints ───────────────────────────────────────────────────────────
 
@@ -9,7 +10,20 @@ import type { ApiMeal } from "@/lib/types/meal";
  * Axios interceptor unwraps `{ statusCode, message, data }` automatically.
  */
 export async function fetchMeals(): Promise<ApiMeal[]> {
-  const res = await http.get<ApiMeal[]>("/meals", { headers: { "Cache-Control": "no-store" } });
+  const res = await http.get<ApiMeal[]>("/meals", {
+    headers: { "Cache-Control": "no-store" },
+  });
+  return res.data;
+}
+
+/** GET /meals/filter?category=veg|non-veg */
+export async function fetchFilteredMeals(
+  category: MealFilterCategory,
+): Promise<ApiMeal[]> {
+  const res = await http.get<ApiMeal[]>("/meals/filter", {
+    params: { category },
+    headers: { "Cache-Control": "no-store" },
+  });
   return res.data;
 }
 
@@ -70,10 +84,32 @@ export type CreateIngredientPayload = {
 
 export type CreateMealPayload = {
   title: string;
+  slug?: string;
+  mealType?: MealType;
+  isPublic?: boolean;
+  aiSummary?: string;
+  tags?: string[];
   description?: string;
   isVegetarian?: boolean;
   /** HTTPS URL or `data:image/...;base64,...` from a local file pick. */
   image?: string | null;
+  ingredients?: CreateIngredientPayload[];
+  preparationSteps?: MealPreparationStep[];
+};
+
+/** PATCH /meals/:id — partial update; `null` clears nullable fields. Owner only. */
+export type UpdateMealPayload = {
+  title?: string;
+  slug?: string | null;
+  mealType?: MealType | null;
+  isPublic?: boolean;
+  aiSummary?: string | null;
+  tags?: string[];
+  description?: string | null;
+  isVegetarian?: boolean;
+  notes?: string | null;
+  image?: string | null;
+  preparationSteps?: MealPreparationStep[] | null;
   ingredients?: CreateIngredientPayload[];
 };
 
@@ -84,5 +120,16 @@ export async function createMeal(
   payload: CreateMealPayload,
 ): Promise<ApiMeal> {
   const res = await http.post<ApiMeal>("/meals", payload);
+  return res.data;
+}
+
+/**
+ * PATCH /meals/:id — requires Bearer token; only the meal owner can update.
+ */
+export async function updateMeal(
+  id: string,
+  payload: UpdateMealPayload,
+): Promise<ApiMeal> {
+  const res = await http.patch<ApiMeal>(`/meals/${id}`, payload);
   return res.data;
 }

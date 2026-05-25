@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { BRAND } from "@/lib/constants/branding";
 
@@ -13,19 +14,25 @@ const textSize = {
   lg: "text-xl",
 } as const;
 
-const dotSize = {
-  sm: "size-2",
-  md: "size-2.5",
-  lg: "size-3",
+const iconSize = {
+  sm: 20,
+  md: 24,
+  lg: 28,
 } as const;
 
-export function Logo({ href = "/", size = "md", className = "" }: LogoProps) {
+export function Logo({ href = "/", size = "sm", className = "" }: LogoProps) {
+  const px = iconSize[size];
+
   const inner = (
     <span
       className={`inline-flex items-center gap-2 font-heading font-bold tracking-tight text-foreground ${textSize[size]} ${className}`}
     >
-      <span
-        className={`shrink-0 rounded-full bg-primary ${dotSize[size]}`}
+      <Image
+        src={BRAND.logoSrc}
+        alt=""
+        width={px}
+        height={px}
+        className="shrink-0 rounded-full"
         aria-hidden
       />
       {BRAND.name}

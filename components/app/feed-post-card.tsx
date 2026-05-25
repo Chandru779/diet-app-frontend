@@ -1,25 +1,26 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { ChevronRight, Utensils } from "lucide-react";
+import { MealCoverImage } from "@/components/app/meal-cover-image";
+import { BadgeCheck, ChevronRight, Utensils } from "lucide-react";
 import type { ApiMeal } from "@/lib/types/meal";
 import { NUTRIENT_COLORS } from "@/lib/constants/nutrients";
-
+import { SYSTEM_USER, isSystemUser } from "@/lib/constants/system-user";
 export function FeedPostCard({ post }: { post: ApiMeal }) {
+  const systemAuthored = isSystemUser(post.user.username);
   return (
     <Link href={`/feed/${post.id}`} className="group block">
       <article className="flex gap-3 overflow-hidden rounded-2xl bg-card p-3.5 shadow-[0_1px_12px_rgba(0,0,0,0.06)] border border-border/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(0,0,0,0.10)]">
         {/* Square thumbnail */}
         <div className="relative h-[88px] w-[88px] shrink-0 overflow-hidden rounded-xl bg-muted">
           {post.image ? (
-            <Image
+            <MealCoverImage
               src={post.image}
+              mealId={post.id}
               alt={post.title}
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-[1.04]"
               sizes="88px"
-              unoptimized={post.image.startsWith("data:")}
             />
           ) : (
             <div className="flex h-full items-center justify-center">
@@ -32,9 +33,16 @@ export function FeedPostCard({ post }: { post: ApiMeal }) {
         <div className="flex min-w-0 flex-1 flex-col">
           {/* Top row: author + arrow */}
           <div className="flex items-center justify-between gap-2">
-            <span className="inline-flex items-center rounded-full bg-primary/8 px-2 py-0.5 text-[10px] font-semibold text-primary">
-              @{post.user.username}
-            </span>
+            {systemAuthored ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                <BadgeCheck className="size-3" aria-hidden="true" />
+                {SYSTEM_USER.displayName}
+              </span>
+            ) : (
+              <span className="inline-flex items-center rounded-full bg-primary/8 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                @{post.user.username}
+              </span>
+            )}
             <ChevronRight className="size-4 shrink-0 text-muted-foreground/30 transition-colors group-hover:text-primary" />
           </div>
 

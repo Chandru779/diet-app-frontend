@@ -24,6 +24,10 @@ export const metadata: Metadata = {
   title: BRAND.name,
   description: BRAND.tagline,
   applicationName: BRAND.name,
+  icons: {
+    icon: [{ url: "/icon", type: "image/png" }],
+    apple: [{ url: "/apple-icon", type: "image/png" }],
+  },
   appleWebApp: {
     capable: true,
     title: BRAND.name,

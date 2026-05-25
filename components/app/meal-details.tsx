@@ -1,7 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Package2, Utensils } from "lucide-react";
+import { MealCoverImage } from "@/components/app/meal-cover-image";
+import { ArrowLeft, BadgeCheck, ChefHat, Package2, Utensils } from "lucide-react";
 import { NUTRIENT_COLORS } from "@/lib/constants/nutrients";
+import { SYSTEM_USER, isSystemUser } from "@/lib/constants/system-user";
 import type { ApiMeal } from "@/lib/types/meal";
 
 type MealDetailsProps = {
@@ -22,14 +23,14 @@ export function MealDetails({ meal }: MealDetailsProps) {
     <div className="-mx-4 -mt-5 pb-10">
       <div className="relative h-[240px] w-full overflow-hidden bg-muted sm:h-[280px]">
         {meal.image ? (
-          <Image
+          <MealCoverImage
             src={meal.image}
+            mealId={meal.id}
             alt={meal.title}
             fill
             className="object-cover"
             sizes="100vw"
             priority
-            unoptimized={meal.image.startsWith("data:")}
           />
         ) : (
           <div className="flex h-full items-center justify-center bg-gradient-to-br from-muted via-background to-muted">
@@ -52,8 +53,15 @@ export function MealDetails({ meal }: MealDetailsProps) {
         </Link>
 
         <div className="absolute bottom-9 left-5 right-5">
-          <span className="mb-1.5 inline-flex items-center rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/90 backdrop-blur-sm">
-            @{meal.user.username}
+          <span className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/90 backdrop-blur-sm">
+            {isSystemUser(meal.user.username) ? (
+              <>
+                <BadgeCheck className="size-3" aria-hidden="true" />
+                {SYSTEM_USER.displayName}
+              </>
+            ) : (
+              `@${meal.user.username}`
+            )}
           </span>
           <h1 className="font-heading text-2xl font-bold leading-tight text-white drop-shadow-sm sm:text-3xl">
             {meal.title}
@@ -175,6 +183,30 @@ export function MealDetails({ meal }: MealDetailsProps) {
             ))}
           </ul>
         </div>
+
+        {meal.preparationSteps && meal.preparationSteps.length > 0 ? (
+          <div className="mt-6">
+            <div className="mb-3 flex items-center gap-2">
+              <ChefHat className="size-4 text-primary" />
+              <h2 className="font-heading text-lg font-bold">Preparation</h2>
+            </div>
+            <ol className="space-y-2">
+              {meal.preparationSteps.map((step, idx) => (
+                <li
+                  key={`${idx}-${step.text.slice(0, 24)}`}
+                  className="flex gap-3 rounded-2xl border border-border/30 bg-[#fafbf9] px-4 py-3"
+                >
+                  <span className="w-5 shrink-0 text-right text-sm font-semibold tabular-nums text-muted-foreground">
+                    {idx + 1}.
+                  </span>
+                  <p className="min-w-0 flex-1 text-sm leading-relaxed text-foreground">
+                    {step.text}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        ) : null}
       </div>
     </div>
   );

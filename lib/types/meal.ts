@@ -1,3 +1,19 @@
+export type MealPreparationStep = {
+  text: string;
+};
+
+export const MEAL_TYPES = [
+  "breakfast",
+  "lunch",
+  "dinner",
+  "snack",
+  "pre_workout",
+  "post_workout",
+  "quick_meals",
+] as const;
+
+export type MealType = (typeof MEAL_TYPES)[number];
+
 export type ApiUser = {
   id: string;
   username: string;
@@ -26,8 +42,15 @@ export type ApiMealIngredient = {
 export type ApiMeal = {
   id: string;
   title: string;
+  slug: string | null;
+  mealType: MealType | null;
+  isPublic: boolean;
+  aiSummary: string | null;
+  tags: string[];
   description: string | null;
   image: string | null;
+  preparationSteps: MealPreparationStep[] | null;
+  popularity: number;
   proteinG: number;
   carbsG: number;
   fatG: number;

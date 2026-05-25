@@ -7,6 +7,8 @@
 export const BRAND = {
   name: "Dietician",
   tagline: "Eat with clarity. Train with confidence.",
+  /** App logo — favicon, PWA / home-screen icons, and in-app branding */
+  logoSrc: "/assets/brand/logo.png",
 } as const;
 
 /** Approximate hex matches for the current theme (see globals.css). */
