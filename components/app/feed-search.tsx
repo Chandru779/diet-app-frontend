@@ -19,14 +19,14 @@ export function FeedSearch({
   filterButtonLabel = "Sort & more",
 }: FeedSearchProps) {
   return (
-    <div className="mt-4 flex items-center gap-2">
-      <div className="flex min-h-11 flex-1 items-center gap-2 rounded-2xl border border-border/30 bg-white px-4 shadow-sm focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-1">
-        <Search className="size-4 shrink-0 text-muted-foreground" />
+    <div className="mt-4 flex items-center gap-2.5">
+      <div className="flex min-h-[46px] flex-1 items-center gap-2.5 rounded-2xl border border-border/25 bg-white px-4 shadow-sm focus-within:ring-2 focus-within:ring-ring/30">
+        <Search className="size-[18px] shrink-0 text-muted-foreground/80" strokeWidth={2} />
         <input
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="min-h-11 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/50"
+          className="min-h-[46px] flex-1 bg-transparent text-[13px] outline-none placeholder:text-muted-foreground/45"
         />
         {value ? (
           <button
@@ -48,14 +48,12 @@ export function FeedSearch({
             : filterButtonLabel
         }
         className={cn(
-          "relative flex size-11 shrink-0 items-center justify-center rounded-2xl border shadow-sm transition active:scale-[0.97]",
-          activeFilterCount > 0
-            ? "border-primary/30 bg-primary text-primary-foreground"
-            : "border-border/30 bg-white text-muted-foreground hover:text-foreground",
+          "relative flex size-[46px] shrink-0 items-center justify-center rounded-2xl border-0 shadow-md transition active:scale-[0.97]",
+          "bg-primary text-primary-foreground hover:bg-primary/90",
           !onFilterClick && "pointer-events-none opacity-50",
         )}
       >
-        <SlidersHorizontal className="size-4" aria-hidden />
+        <SlidersHorizontal className="size-[18px] text-white" strokeWidth={2} aria-hidden />
         {activeFilterCount > 0 ? (
           <span className="absolute -right-1 -top-1 flex size-[18px] items-center justify-center rounded-full bg-white text-[10px] font-bold text-primary shadow-sm ring-2 ring-primary">
             {activeFilterCount > 9 ? "9+" : activeFilterCount}

@@ -1,305 +1,340 @@
-"use client";
-
-import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { FeedAppBar } from "@/components/app/feed-app-bar";
-import { FeedPostCard } from "@/components/app/feed-post-card";
-import { FeedSearch } from "@/components/app/feed-search";
-import { MealEmptyIllustration } from "@/components/app/meal-empty-illustration";
-import { MealFeedQuickFilters } from "@/components/app/meal-feed-quick-filters";
-import { MealFilterSheet } from "@/components/app/meal-filter-sheet";
-import { MealLoadingIllustration } from "@/components/app/meal-loading-illustration";
-import { fetchFilteredMeals, fetchMeals } from "@/lib/api/meal";
-import {
-  applyMealFeedClientFilters,
-  DEFAULT_MEAL_FEED_FILTERS,
-  hasMealFeedClientFilters,
-  mealFeedFiltersSummary,
-  mealFeedFiltersToSearchParams,
-  countMealFeedSheetFilters,
-  parseMealFeedFilters,
-  toggleMealFeedQuickChip,
-  type MealFeedFilters,
-  type MealFeedQuickChipId,
-} from "@/lib/config/meal-feed-filters";
-import { deriveDisplayName } from "@/lib/auth/display-name";
-import { useFeedStore } from "@/lib/store/feed-store";
-import { useAuthStore } from "@/lib/store/auth-store";
-import type { ApiMeal } from "@/lib/types/meal";
-import { mealFilterLabel } from "@/lib/types/meal-filter";
-
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  return "Good evening";
-}
-
-export function MealList() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const filters = useMemo(
-    () => parseMealFeedFilters(searchParams),
-    [searchParams],
-  );
-  const refreshKey = useFeedStore((s) => s.refreshKey);
-  const openCreateSheet = useFeedStore((s) => s.openCreateSheet);
-  const username = useAuthStore((s) => s.user?.username);
-  const [query, setQuery] = useState("");
-  const [meals, setMeals] = useState<ApiMeal[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [filterOpen, setFilterOpen] = useState(false);
-
-  const sheetFilterCount = countMealFeedSheetFilters(filters);
-
-  const pushFilters = useCallback(
-    (next: MealFeedFilters) => {
-      const qs = mealFeedFiltersToSearchParams(next).toString();
-      router.push(qs ? `/feed?${qs}` : "/feed", { scroll: false });
-    },
-    [router],
-  );
-
-  const clearAllFilters = useCallback(() => {
-    pushFilters(DEFAULT_MEAL_FEED_FILTERS);
-  }, [pushFilters]);
-
-  const toggleQuickChip = useCallback(
-    (chipId: MealFeedQuickChipId) => {
-      pushFilters(toggleMealFeedQuickChip(filters, chipId));
-    },
-    [filters, pushFilters],
-  );
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-
-    const request = filters.category
-      ? fetchFilteredMeals(filters.category)
-      : fetchMeals();
-
-    request
-      .then((rows) => {
-        if (cancelled) return;
-        setMeals(rows);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setError("Could not load meals. Make sure the backend is running.");
-      })
-      .finally(() => {
-        if (cancelled) return;
-        setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshKey, filters.category]);
-
-  const afterClientFilters = useMemo(
-    () => applyMealFeedClientFilters(meals, filters),
-    [meals, filters],
-  );
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return afterClientFilters;
-    return afterClientFilters.filter((meal) => {
-      const blob = meal.ingredients.map((i) => i.name.toLowerCase()).join(" ");
-      return (
-        meal.title.toLowerCase().includes(q) ||
-        (meal.description ?? "").toLowerCase().includes(q) ||
-        meal.user.username.toLowerCase().includes(q) ||
-        blob.includes(q)
-      );
-    });
-  }, [query, afterClientFilters]);
-
-  const previewCount = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const base = applyMealFeedClientFilters(meals, filters);
-    if (!q) return base.length;
-    return base.filter((meal) => {
-      const blob = meal.ingredients.map((i) => i.name.toLowerCase()).join(" ");
-      return (
-        meal.title.toLowerCase().includes(q) ||
-        (meal.description ?? "").toLowerCase().includes(q) ||
-        meal.user.username.toLowerCase().includes(q) ||
-        blob.includes(q)
-      );
-    }).length;
-  }, [meals, filters, query]);
-
-  const { firstName } = deriveDisplayName(username);
-  const headline = username
-    ? `Hey, ${firstName} 👋`
-    : "What's on your plate?";
-
-  const listEmpty = !loading && !error && meals.length === 0;
-  const clientFilteredEmpty =
-    !loading &&
-    !error &&
-    meals.length > 0 &&
-    afterClientFilters.length === 0 &&
-    hasMealFeedClientFilters(filters);
-  const showNoSearchResults =
-    !loading &&
-    !error &&
-    afterClientFilters.length > 0 &&
-    filtered.length === 0 &&
-    Boolean(query);
-
-  const listHeading = useMemo(() => {
-    if (query) {
-      return `${filtered.length} result${filtered.length === 1 ? "" : "s"}`;
-    }
-    const scope = mealFeedFiltersSummary(filters);
-    return `${scope} · ${filtered.length}`;
-  }, [query, filtered.length, filters]);
-
-  const emptyTitle = filters.category
-    ? `No ${filters.category === "veg" ? "vegetarian" : "non-vegetarian"} meals yet`
-    : "No meals yet";
-
-  const emptyDescription = filters.category
-    ? `Nothing in the ${mealFilterLabel(filters.category).toLowerCase()} feed right now. Try all meals or log one that matches.`
-    : "When you or others log meals, they will show up here. Be the first to share one.";
-
-  return (
-    <div className="pb-4">
-      <div className="bg-feed-header -mx-4 mb-5 rounded-b-[2rem] px-5 pb-5 pt-3">
-        <FeedAppBar greeting={getGreeting()} headline={headline} />
-        <FeedSearch
-          value={query}
-          onChange={setQuery}
-          onFilterClick={() => setFilterOpen(true)}
-          activeFilterCount={sheetFilterCount}
-          filterButtonLabel="Sort & more"
-        />
-        <MealFeedQuickFilters filters={filters} onToggle={toggleQuickChip} />
-      </div>
-
-      <MealFilterSheet
-        open={filterOpen}
-        onClose={() => setFilterOpen(false)}
-        value={filters}
-        onApply={pushFilters}
-        resultCount={previewCount}
-      />
-
-      {!loading && !error && !listEmpty && !clientFilteredEmpty ? (
-        <div className="mb-3 flex items-center justify-between px-0.5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {listHeading}
-          </p>
-        </div>
-      ) : null}
-
-      {loading ? (
-        <div
-          className="flex flex-col items-center justify-center py-16"
-          aria-busy="true"
-          aria-live="polite"
-        >
-          <MealLoadingIllustration
-            className="h-16 w-16 animate-pulse text-primary/50"
-            label="Loading meals"
-          />
-        </div>
-      ) : null}
-
-      {error ? (
-        <div className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-          {error}
-        </div>
-      ) : null}
-
-      {!loading && !error && listEmpty ? (
-        <div
-          className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/80 bg-card/40 px-6 py-16 text-center"
-          role="status"
-          aria-live="polite"
-        >
-          <MealEmptyIllustration className="mb-4 h-20 w-20 text-primary/35" />
-          <p className="font-heading text-lg font-semibold text-foreground">
-            {emptyTitle}
-          </p>
-          <p className="mt-1 max-w-xs text-sm text-muted-foreground">
-            {emptyDescription}
-          </p>
-          {filters.category ? (
-            <button
-              type="button"
-              onClick={clearAllFilters}
-              className="mt-6 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground shadow-sm transition hover:bg-muted/40 active:scale-[0.99]"
-            >
-              Browse all meals
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={openCreateSheet}
-              className="mt-6 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-soft transition hover:opacity-90 active:scale-[0.99]"
-            >
-              Log a meal
-            </button>
-          )}
-        </div>
-      ) : null}
-
-      {!loading && !error && clientFilteredEmpty ? (
-        <div
-          className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/80 bg-card/40 px-6 py-16 text-center"
-          role="status"
-          aria-live="polite"
-        >
-          <MealEmptyIllustration className="mb-4 h-20 w-20 text-primary/35" />
-          <p className="font-heading text-lg font-semibold text-foreground">
-            No meals match these filters
-          </p>
-          <p className="mt-1 max-w-xs text-sm text-muted-foreground">
-            Try a different chip or open Sort &amp; more to adjust.
-          </p>
-          <button
-            type="button"
-            onClick={clearAllFilters}
-            className="mt-6 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-soft transition hover:opacity-90 active:scale-[0.99]"
-          >
-            Clear filters
-          </button>
-        </div>
-      ) : null}
-
-      {!loading && !error && !listEmpty && !clientFilteredEmpty ? (
-        <>
-          <ul className="flex flex-col gap-3">
-            {filtered.map((meal) => (
-              <li key={meal.id}>
-                <FeedPostCard post={meal} />
-              </li>
-            ))}
-          </ul>
-
-          {showNoSearchResults ? (
-            <div className="py-16 text-center">
-              <p className="text-sm text-muted-foreground">
-                No meals matched &ldquo;{query}&rdquo;
-              </p>
-              <button
-                type="button"
-                onClick={() => setQuery("")}
-                className="mt-2 text-sm font-semibold text-primary underline-offset-4 hover:underline"
-              >
-                Clear search
-              </button>
-            </div>
-          ) : null}
-        </>
-      ) : null}
-    </div>
-  );
-}
+"use client";
+
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { FeedSearch } from "@/components/app/feed-search";
+import { MealFilterSheet } from "@/components/app/meal-filter-sheet";
+import { FeedMoreCategoriesSheet } from "@/components/app/feed/feed-more-categories-sheet";
+import { MealLoadingIllustration } from "@/components/app/meal-loading-illustration";
+import { MealEmptyIllustration } from "@/components/app/meal-empty-illustration";
+import { FeedHeader } from "@/components/app/feed/feed-header";
+import { FeedPrimaryCategories } from "@/components/app/feed/feed-primary-categories";
+import { FeedFiltersCustomize } from "@/components/app/feed/feed-filters-customize";
+import { FeedMacroChips } from "@/components/app/feed/feed-macro-chips";
+import { FeedHomeSections } from "@/components/app/feed/feed-home-sections";
+import { FeedDiscoverResults } from "@/components/app/feed/feed-discover-results";
+import { fetchFeedHome } from "@/lib/api/feed";
+import { fetchDiscoverCount, fetchDiscoverMeals } from "@/lib/api/discover";
+import {
+  DEFAULT_FEED_ADVANCED_FILTERS,
+  countFeedAdvancedFilters,
+  feedAdvancedFiltersToSearchParams,
+  parseFeedAdvancedFilters,
+  type FeedAdvancedFilters,
+} from "@/lib/config/feed-advanced-filters";
+import type { MacroChipId, PrimaryCategoryId } from "@/lib/config/feed-ui";
+import { FEED_PRIMARY_CATEGORIES } from "@/lib/config/feed-ui";
+import {
+  buildDiscoverParams,
+  hasActiveDiscoverState,
+  type FeedDiscoverState,
+} from "@/lib/feed/discover-params";
+import { useFeedStore } from "@/lib/store/feed-store";
+import type { FeedSection } from "@/lib/types/feed";
+import type { DiscoverMeal } from "@/lib/types/meal-discover";
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
+}
+
+function parsePrimaryFromUrl(value: string | null): PrimaryCategoryId | null {
+  if (!value) return null;
+  const found = FEED_PRIMARY_CATEGORIES.find((c) => c.id === value || c.slug === value);
+  return found?.id ?? null;
+}
+
+export function MealList() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const refreshKey = useFeedStore((s) => s.refreshKey);
+
+  const sheetFilters = useMemo(
+    () => parseFeedAdvancedFilters(searchParams),
+    [searchParams],
+  );
+
+  const [search, setSearch] = useState("");
+  const [primaryCategory, setPrimaryCategory] = useState<PrimaryCategoryId | null>(
+    () => parsePrimaryFromUrl(searchParams.get("category")),
+  );
+  const [macroChips, setMacroChips] = useState<MacroChipId[]>([]);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  const [sections, setSections] = useState<FeedSection[]>([]);
+  const [discoverMeals, setDiscoverMeals] = useState<DiscoverMeal[]>([]);
+  const [discoverTotal, setDiscoverTotal] = useState(0);
+  const [loadingHome, setLoadingHome] = useState(true);
+  const [loadingDiscover, setLoadingDiscover] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [previewCount, setPreviewCount] = useState<number | undefined>();
+
+  const discoverState: FeedDiscoverState = useMemo(
+    () => ({
+      search,
+      primaryCategory,
+      macroChips,
+      sheetFilters,
+    }),
+    [search, primaryCategory, macroChips, sheetFilters],
+  );
+
+  const showDiscover = hasActiveDiscoverState(discoverState);
+
+  const sheetFilterCount = countFeedAdvancedFilters(sheetFilters);
+  const customizeCount =
+    sheetFilterCount +
+    macroChips.length +
+    (primaryCategory && primaryCategory !== "more" ? 1 : 0);
+
+  const pushSheetFilters = useCallback(
+    (next: FeedAdvancedFilters) => {
+      const qs = feedAdvancedFiltersToSearchParams(next).toString();
+      const cat =
+        primaryCategory && primaryCategory !== "more"
+          ? `category=${primaryCategory}`
+          : "";
+      const combined = [qs, cat].filter(Boolean).join("&");
+      router.push(combined ? `/feed?${combined}` : "/feed", { scroll: false });
+    },
+    [router, primaryCategory],
+  );
+
+  useEffect(() => {
+    setPrimaryCategory(parsePrimaryFromUrl(searchParams.get("category")));
+  }, [searchParams]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingHome(true);
+    setError(null);
+
+    fetchFeedHome()
+      .then((data) => {
+        if (!cancelled) setSections(data.sections);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setError("Could not load feed. Make sure the backend is running.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingHome(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshKey]);
+
+  useEffect(() => {
+    if (!showDiscover) {
+      setDiscoverMeals([]);
+      setDiscoverTotal(0);
+      return;
+    }
+
+    let cancelled = false;
+    setLoadingDiscover(true);
+    setError(null);
+
+    const params = buildDiscoverParams(discoverState);
+
+    fetchDiscoverMeals(params)
+      .then((result) => {
+        if (!cancelled) {
+          setDiscoverMeals(result.items);
+          setDiscoverTotal(result.total);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setError("Could not load meals. Make sure the backend is running.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingDiscover(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [discoverState, showDiscover, refreshKey]);
+
+  useEffect(() => {
+    if (!filterOpen) return;
+    let cancelled = false;
+    const params = buildDiscoverParams({
+      ...discoverState,
+      sheetFilters,
+    });
+    fetchDiscoverCount(params)
+      .then((total) => {
+        if (!cancelled) setPreviewCount(total);
+      })
+      .catch(() => {
+        if (!cancelled) setPreviewCount(undefined);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [filterOpen, discoverState, sheetFilters]);
+
+  const handlePrimarySelect = useCallback((id: PrimaryCategoryId) => {
+    if (id === "more") {
+      setMoreOpen(true);
+      return;
+    }
+    setPrimaryCategory((prev) => (prev === id ? null : id));
+  }, []);
+
+  const toggleMacroChip = useCallback((id: MacroChipId) => {
+    setMacroChips((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id],
+    );
+  }, []);
+
+  const handleExploreCategory = useCallback((slug: string) => {
+    const match = FEED_PRIMARY_CATEGORIES.find((c) => c.slug === slug);
+    if (match) {
+      setPrimaryCategory(match.id);
+    } else {
+      setMacroChips((prev) =>
+        prev.includes(slug as MacroChipId)
+          ? prev
+          : [...prev, slug as MacroChipId],
+      );
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  const handleViewAllSection = useCallback((sectionId: string) => {
+    if (sectionId === "high-protein-meals") {
+      setPrimaryCategory("high-protein");
+    } else if (sectionId === "todays-picks") {
+      setPrimaryCategory("popular");
+    } else if (sectionId === "trending-this-week") {
+      setPrimaryCategory("popular");
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  const handleApplyCategories = useCallback(
+    (slugs: string[]) => {
+      pushSheetFilters({
+        ...sheetFilters,
+        categorySlugs: slugs.length ? slugs : undefined,
+      });
+    },
+    [pushSheetFilters, sheetFilters],
+  );
+
+  const loading = loadingHome || (showDiscover && loadingDiscover);
+
+  return (
+    <div className="pb-4">
+      <div className="bg-feed-header -mx-4 mb-0 rounded-b-[1.75rem] px-5 pb-4 pt-2">
+        <FeedHeader greeting={getGreeting()} />
+
+        <FeedSearch
+          value={search}
+          onChange={setSearch}
+          placeholder="Search high-protein meals, ingredients, diets…"
+          onFilterClick={() => setFilterOpen(true)}
+          activeFilterCount={sheetFilterCount}
+          filterButtonLabel="Filters"
+        />
+
+        <FeedPrimaryCategories
+          active={primaryCategory}
+          onSelect={handlePrimarySelect}
+        />
+
+        <FeedFiltersCustomize
+          onClick={() => setFilterOpen(true)}
+          activeCount={customizeCount}
+        />
+
+        <FeedMacroChips active={macroChips} onToggle={toggleMacroChip} />
+      </div>
+
+      <MealFilterSheet
+        open={filterOpen}
+        onClose={() => setFilterOpen(false)}
+        value={sheetFilters}
+        onApply={pushSheetFilters}
+        resultCount={previewCount}
+      />
+
+      <FeedMoreCategoriesSheet
+        open={moreOpen}
+        onClose={() => setMoreOpen(false)}
+        selectedSlugs={sheetFilters.categorySlugs ?? []}
+        onApply={handleApplyCategories}
+        onOpenFilters={() => {
+          setMoreOpen(false);
+          setFilterOpen(true);
+        }}
+      />
+
+      {loading && !sections.length && !discoverMeals.length ? (
+        <div
+          className="flex flex-col items-center justify-center py-16"
+          aria-busy="true"
+        >
+          <MealLoadingIllustration
+            className="h-16 w-16 animate-pulse text-primary/50"
+            label="Loading meals"
+          />
+        </div>
+      ) : null}
+
+      {error ? (
+        <div className="mt-6 rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      ) : null}
+
+      {!loading && !error && showDiscover ? (
+        discoverMeals.length > 0 ? (
+          <FeedDiscoverResults
+            meals={discoverMeals}
+            total={discoverTotal}
+            title="Matching meals"
+          />
+        ) : (
+          <div className="mt-8 flex flex-col items-center px-6 py-12 text-center">
+            <MealEmptyIllustration className="mb-4 h-20 w-20 text-primary/35" />
+            <p className="font-heading text-lg font-semibold">No meals found</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Try adjusting filters or search terms.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setSearch("");
+                setPrimaryCategory(null);
+                setMacroChips([]);
+                pushSheetFilters(DEFAULT_FEED_ADVANCED_FILTERS);
+              }}
+              className="mt-6 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
+            >
+              Clear all
+            </button>
+          </div>
+        )
+      ) : null}
+
+      {!showDiscover && !error ? (
+        <FeedHomeSections
+          sections={sections}
+          onViewAll={handleViewAllSection}
+          onExploreCategory={handleExploreCategory}
+        />
+      ) : null}
+    </div>
+  );
+}

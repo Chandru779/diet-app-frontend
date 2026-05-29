@@ -1,20 +1,20 @@
 "use client";
 
-import { Bookmark } from "lucide-react";
+import { Heart } from "lucide-react";
 import { RequireAuth } from "@/components/app/require-auth";
 import { useFeedStore } from "@/lib/store/feed-store";
 
-function SavedContent() {
+function FavoritesContent() {
   const openCreateSheet = useFeedStore((s) => s.openCreateSheet);
 
   return (
     <div className="pb-4">
       <div className="mb-6">
         <h1 className="font-heading text-xl font-bold text-foreground">
-          Saved
+          Favorites
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Meals you bookmark will appear here.
+          Meals you favorite will appear here.
         </p>
       </div>
 
@@ -23,13 +23,13 @@ function SavedContent() {
         role="status"
       >
         <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-primary/8">
-          <Bookmark className="size-9 text-primary/50" strokeWidth={1.5} />
+          <Heart className="size-9 text-primary/50" strokeWidth={1.5} />
         </div>
         <p className="font-heading text-lg font-semibold text-foreground">
-          Nothing saved yet
+          No favorites yet
         </p>
         <p className="mt-1 max-w-xs text-sm text-muted-foreground">
-          Tap the bookmark on any meal to save it for later. Coming soon.
+          Tap the heart on any meal to save it here. Coming soon.
         </p>
         <button
           type="button"
@@ -46,10 +46,10 @@ function SavedContent() {
 export default function SavedPage() {
   return (
     <RequireAuth
-      title="Sign in to see saved meals"
-      description="Bookmark meals you love — they’ll appear here once you sign in."
+      title="Sign in to see favorites"
+      description="Favorite meals you love — they’ll appear here once you sign in."
     >
-      <SavedContent />
+      <FavoritesContent />
     </RequireAuth>
   );
 }

@@ -86,7 +86,7 @@ export function BottomNav() {
           />
           <NavTab
             href="/my-meals"
-            label="My meals"
+            label="My Meals"
             icon={ClipboardList}
             active={myMealsActive}
           />
@@ -105,7 +105,7 @@ export function BottomNav() {
           </div>
           <NavTab
             href="/saved"
-            label="Saved"
+            label="Collections"
             icon={Bookmark}
             active={savedActive}
           />
