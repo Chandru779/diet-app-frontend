@@ -28,7 +28,7 @@ export function FeedSearch({
         </p>
       ) : null}
 
-      <div className="flex min-h-[48px] items-center gap-2 rounded-2xl border border-border/20 bg-white py-1.5 pl-4 pr-1.5 shadow-[0_2px_12px_rgba(0,0,0,0.06)] focus-within:ring-2 focus-within:ring-ring/25">
+      <div className="meal-card flex min-h-[48px] items-center gap-2 rounded-2xl bg-white py-1.5 pl-4 pr-1.5 shadow-[0_2px_12px_rgba(0,0,0,0.06)] focus-within:ring-2 focus-within:ring-ring/25">
         <Search
           className="size-[18px] shrink-0 text-foreground/70"
           strokeWidth={2}

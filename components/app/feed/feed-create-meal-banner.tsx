@@ -21,7 +21,7 @@ export function FeedCreateMealBanner() {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-r from-emerald-50 to-white p-4 shadow-sm">
+    <div className="meal-card relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-50 to-white p-4 shadow-sm">
       <div className="flex items-center gap-4">
         <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
           <Salad className="size-7" strokeWidth={1.75} />

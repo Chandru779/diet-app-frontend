@@ -26,7 +26,7 @@ function DiscoverMealCard({
   return (
     <Link
       href={meal.href}
-      className="group w-[148px] shrink-0 overflow-hidden rounded-2xl border border-border/20 bg-card shadow-card transition hover:-translate-y-0.5 hover:shadow-card-hover active:scale-[0.99]"
+      className="meal-card group w-[148px] shrink-0 overflow-hidden rounded-2xl bg-card shadow-card transition hover:-translate-y-0.5 hover:shadow-card-hover active:scale-[0.99]"
     >
       <div className="relative h-[100px] w-full bg-muted">
         <MealCoverImage
@@ -95,7 +95,7 @@ function DiscoverSkeleton() {
       {Array.from({ length: DISCOVER_LIMIT }).map((_, i) => (
         <div
           key={i}
-          className="w-[148px] shrink-0 overflow-hidden rounded-2xl border border-border/15 bg-card"
+          className="meal-card w-[148px] shrink-0 overflow-hidden rounded-2xl bg-card"
         >
           <div className="h-[100px] animate-pulse bg-muted/70" />
           <div className="h-8 animate-pulse bg-muted/40" />

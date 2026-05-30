@@ -5,6 +5,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { addFavorite, removeFavorite } from "@/lib/api/favorites";
 import { getAuthAccessTokenFromCookie } from "@/lib/auth/auth-cookie";
+import { useFeedStore } from "@/lib/store/feed-store";
 import { useRouter } from "next/navigation";
 
 type FavoriteButtonProps = {
@@ -19,6 +20,7 @@ export function FavoriteButton({
   className,
 }: FavoriteButtonProps) {
   const router = useRouter();
+  const bumpRefresh = useFeedStore((s) => s.bumpRefresh);
   const [favorited, setFavorited] = useState(initialFavorited);
   const [loading, setLoading] = useState(false);
 
@@ -42,6 +44,7 @@ export function FavoriteButton({
       } else {
         await removeFavorite(mealId);
       }
+      bumpRefresh();
     } catch {
       setFavorited(!next);
     } finally {

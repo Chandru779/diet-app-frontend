@@ -23,7 +23,7 @@ export function FeedExploreTile({ slug, label, onSelect }: FeedExploreTileProps)
       type="button"
       onClick={() => onSelect?.(slug)}
       className={cn(
-        "flex w-[8.5rem] shrink-0 snap-start flex-col rounded-2xl p-3.5 text-left shadow-sm transition active:scale-[0.98]",
+        "meal-card flex w-[8.5rem] shrink-0 snap-start flex-col rounded-2xl p-3.5 text-left shadow-sm transition active:scale-[0.98]",
         style.bg,
       )}
     >

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { MealNavLink } from "@/components/app/meal-nav-link";
 import { MealCoverImage } from "@/components/app/meal-cover-image";
 import { BadgeCheck, ChevronRight, Utensils } from "lucide-react";
 import type { ApiMeal } from "@/lib/types/meal";
@@ -9,8 +9,8 @@ import { SYSTEM_USER, isSystemUser } from "@/lib/constants/system-user";
 export function FeedPostCard({ post }: { post: ApiMeal }) {
   const systemAuthored = isSystemUser(post.user.username);
   return (
-    <Link href={`/feed/${post.id}`} className="group block">
-      <article className="flex gap-3 overflow-hidden rounded-2xl bg-card p-3.5 shadow-[0_1px_12px_rgba(0,0,0,0.06)] border border-border/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(0,0,0,0.10)]">
+    <MealNavLink href={`/feed/${post.id}`} className="group block">
+      <article className="meal-card flex gap-3 overflow-hidden rounded-2xl bg-card p-3.5 shadow-[0_1px_12px_rgba(0,0,0,0.06)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(0,0,0,0.10)]">
         {/* Square thumbnail */}
         <div className="relative h-[88px] w-[88px] shrink-0 overflow-hidden rounded-xl bg-muted">
           {post.image ? (
@@ -85,6 +85,6 @@ export function FeedPostCard({ post }: { post: ApiMeal }) {
           </div>
         </div>
       </article>
-    </Link>
+    </MealNavLink>
   );
 }

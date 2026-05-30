@@ -474,7 +474,7 @@ export function MealList() {
 
     <div className="flex flex-col gap-3 pb-4">
 
-      <div className="bg-feed-header -mx-4 flex flex-col gap-3 rounded-br-[1.75rem] px-5 pb-3 pt-2">
+      <div className="bg-feed-header -mx-4 flex flex-col gap-3 rounded-br-[1.75rem] px-5 pb-2 pt-2">
 
         <div className="flex flex-col gap-1.5">
           <FeedHeader greeting={getGreeting()} />

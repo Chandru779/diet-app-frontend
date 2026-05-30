@@ -34,7 +34,7 @@ function MealShowcasePanel({
 }) {
   return (
     <Link href="/feed" className="group block">
-      <article className="relative h-[210px] overflow-hidden rounded-3xl border border-border/25 bg-card shadow-card transition hover:shadow-card-hover active:scale-[0.995]">
+      <article className="meal-card relative h-[210px] overflow-hidden rounded-3xl bg-card shadow-card transition hover:shadow-card-hover active:scale-[0.995]">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-background to-accent/30" />
 
         {loading ? (

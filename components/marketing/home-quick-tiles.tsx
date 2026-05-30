@@ -11,7 +11,7 @@ const tiles = [
     description: MARKETING_COPY.myCreationsDesc,
     icon: ChefHat,
     iconWrap: "bg-primary/10 text-primary",
-    accent: "border-border/25 bg-card hover:border-primary/20 hover:bg-primary/[0.03]",
+    accent: "meal-card bg-card hover:border-gray-200 hover:bg-primary/[0.03]",
   },
   {
     href: "/saved",
@@ -19,7 +19,7 @@ const tiles = [
     description: MARKETING_COPY.savedMealsDesc,
     icon: Bookmark,
     iconWrap: "bg-amber-500/10 text-amber-700",
-    accent: "border-border/25 bg-card hover:border-amber-200/60 hover:bg-amber-50/30",
+    accent: "meal-card bg-card hover:border-gray-200 hover:bg-amber-50/30",
   },
 ] as const;
 
@@ -30,7 +30,7 @@ export function HomeQuickTiles() {
         <Link
           key={href}
           href={href}
-          className={`group flex min-h-[108px] flex-col justify-between rounded-2xl border p-3.5 shadow-[0_2px_12px_rgba(0,0,0,0.05)] transition hover:-translate-y-0.5 hover:shadow-card active:scale-[0.99] ${accent}`}
+          className={`group flex min-h-[108px] flex-col justify-between rounded-2xl p-3.5 shadow-[0_2px_12px_rgba(0,0,0,0.05)] transition hover:-translate-y-0.5 hover:shadow-card active:scale-[0.99] ${accent}`}
         >
           <div className="flex items-start justify-between">
             <span

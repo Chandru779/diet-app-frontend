@@ -140,7 +140,7 @@ export function MealDetails({ meal }: MealDetailsProps) {
             {meal.ingredients.map((ing, idx) => (
               <li
                 key={ing.id}
-                className="flex items-start gap-3 rounded-2xl border border-border/40 bg-background px-4 py-3.5"
+                className="meal-card flex items-start gap-3 rounded-2xl bg-background px-4 py-3.5"
               >
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
                   {idx + 1}
@@ -194,7 +194,7 @@ export function MealDetails({ meal }: MealDetailsProps) {
               {meal.preparationSteps.map((step, idx) => (
                 <li
                   key={`${idx}-${step.text.slice(0, 24)}`}
-                  className="flex gap-3 rounded-2xl border border-border/30 bg-[#fafbf9] px-4 py-3"
+                  className="meal-card flex gap-3 rounded-2xl bg-[#fafbf9] px-4 py-3"
                 >
                   <span className="w-5 shrink-0 text-right text-sm font-semibold tabular-nums text-muted-foreground">
                     {idx + 1}.

@@ -14,13 +14,13 @@ export function HomeCategoryCards() {
       {/* Vegetarian */}
       <Link
         href="/feed?category=veg"
-        className="group relative flex min-h-[200px] min-w-0 flex-col rounded-3xl border border-emerald-100/80 bg-gradient-to-br from-emerald-50/90 via-white to-emerald-100/50 py-3 pl-3 pr-2 shadow-soft transition hover:shadow-card"
+        className="meal-card group relative flex min-h-[200px] min-w-0 flex-col rounded-3xl bg-gradient-to-br from-emerald-50/90 via-white to-emerald-100/50 py-3 pl-3 pr-2 shadow-soft transition hover:shadow-card"
       >
         <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-700">
           <Leaf className="size-4" strokeWidth={2.25} aria-hidden />
         </span>
         <div className="mt-2 min-w-0 flow-root">
-          <div className={`${cardImageClass} ring-1 ring-emerald-100/80`}>
+          <div className={cardImageClass}>
             <Image
               src={MARKETING_ASSETS.vegMeal}
               alt="Vegetarian meal"
@@ -42,7 +42,7 @@ export function HomeCategoryCards() {
             {MARKETING_COPY.vegCardSub}
           </p>
         </div>
-        <span className="mt-auto inline-flex w-full min-w-0 items-center justify-center gap-1 rounded-full border border-emerald-200 bg-white py-2 text-[10px] font-semibold leading-tight text-primary shadow-sm transition group-hover:bg-emerald-50">
+        <span className="meal-card mt-auto inline-flex w-full min-w-0 items-center justify-center gap-1 rounded-full bg-white py-2 text-[10px] font-semibold leading-tight text-primary shadow-sm transition group-hover:bg-emerald-50">
           {MARKETING_COPY.vegExplore}
           <ArrowRight className="size-3 shrink-0" aria-hidden />
         </span>
@@ -51,13 +51,13 @@ export function HomeCategoryCards() {
       {/* Non-vegetarian */}
       <Link
         href="/feed?category=non-veg"
-        className="group relative flex min-h-[200px] min-w-0 flex-col rounded-3xl border border-orange-100/80 bg-gradient-to-br from-orange-50/90 via-white to-amber-50/60 py-3 pl-3 pr-2 shadow-soft transition hover:shadow-card"
+        className="meal-card group relative flex min-h-[200px] min-w-0 flex-col rounded-3xl bg-gradient-to-br from-orange-50/90 via-white to-amber-50/60 py-3 pl-3 pr-2 shadow-soft transition hover:shadow-card"
       >
         <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-orange-500/15 text-orange-700">
           <Drumstick className="size-4" strokeWidth={2.25} aria-hidden />
         </span>
         <div className="mt-2 min-w-0 flow-root">
-          <div className={`${cardImageClass} ring-1 ring-orange-100/80`}>
+          <div className={cardImageClass}>
             <Image
               src={MARKETING_ASSETS.nonVegCategory}
               alt="Non-vegetarian meal"
@@ -77,7 +77,7 @@ export function HomeCategoryCards() {
             {MARKETING_COPY.nonVegCardSub}
           </p>
         </div>
-        <span className="mt-auto inline-flex w-full min-w-0 items-center justify-center gap-1 rounded-full border border-orange-200 bg-white py-2 text-[10px] font-semibold leading-tight text-orange-600 shadow-sm transition group-hover:bg-orange-50">
+        <span className="meal-card mt-auto inline-flex w-full min-w-0 items-center justify-center gap-1 rounded-full bg-white py-2 text-[10px] font-semibold leading-tight text-orange-600 shadow-sm transition group-hover:bg-orange-50">
           {MARKETING_COPY.nonVegExplore}
           <ArrowRight className="size-3 shrink-0" aria-hidden />
         </span>

@@ -37,8 +37,11 @@ export function RequireAuth({
 
   if (!hydrated) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center" aria-busy>
-        <div className="h-2 w-24 animate-pulse rounded-full bg-muted" />
+      <div
+        className="meal-card flex min-h-[40vh] flex-col items-center justify-center rounded-2xl bg-white"
+        aria-busy
+      >
+        <div className="h-2 w-24 animate-pulse rounded-full bg-primary/20" />
       </div>
     );
   }
@@ -51,7 +54,7 @@ export function RequireAuth({
   return (
     <div className="flex min-h-[55vh] flex-col items-center justify-center px-2 py-10">
       <div className="w-full max-w-sm rounded-3xl border border-border/70 bg-card p-7 text-center shadow-card">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+        <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
           <LogIn className="size-5" strokeWidth={2.25} />
         </div>
         <h2 className="font-heading text-xl font-bold text-foreground">

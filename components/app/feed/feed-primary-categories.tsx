@@ -64,7 +64,7 @@ export function FeedPrimaryCategories({
                 "flex size-[4.25rem] shrink-0 flex-col items-center justify-center gap-1 rounded-2xl border px-0.5 py-1.5 transition active:scale-[0.98]",
                 isActive
                   ? "border-primary bg-primary text-primary-foreground shadow-md"
-                  : "border-border/40 bg-white text-foreground shadow-sm hover:border-border/60",
+                  : "border-gray-100 bg-white text-foreground shadow-sm hover:border-gray-200",
               )}
             >
               <Icon

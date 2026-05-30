@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { MealNavLink } from "@/components/app/meal-nav-link";
 import { ChefHat, Clock, Flame, Utensils } from "lucide-react";
 import { MealCoverImage } from "@/components/app/meal-cover-image";
 import { FavoriteButton } from "@/components/app/feed/favorite-button";
@@ -44,9 +44,9 @@ export function FeedHighProteinCard({ meal }: FeedHighProteinCardProps) {
           : null;
 
   return (
-    <Link
+    <MealNavLink
       href={`/feed/${meal.id}`}
-      className="group relative flex gap-3 rounded-2xl bg-white p-3 shadow-[0_1px_12px_rgba(0,0,0,0.06)] ring-1 ring-border/15 transition hover:shadow-[0_4px_20px_rgba(0,0,0,0.1)]"
+      className="meal-card group relative flex gap-3 rounded-2xl bg-white p-3 shadow-[0_1px_12px_rgba(0,0,0,0.06)] transition hover:shadow-[0_4px_20px_rgba(0,0,0,0.1)]"
     >
       <div className="absolute right-2 top-2 z-10">
         <FavoriteButton
@@ -122,6 +122,6 @@ export function FeedHighProteinCard({ meal }: FeedHighProteinCardProps) {
         compact
         className="shrink-0 self-center pr-1"
       />
-    </Link>
+    </MealNavLink>
   );
 }

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Moon, UserRound } from "lucide-react";
+import { BrandIconLink } from "@/components/brand/brand-icon-link";
 import { deriveDisplayName } from "@/lib/auth/display-name";
 import { useAuthStore } from "@/lib/store/auth-store";
 
@@ -16,7 +17,10 @@ export function FeedHeader({ greeting }: FeedHeaderProps) {
 
   return (
     <div className="min-w-0">
-      <p className="flex items-center gap-1 text-[13px] text-muted-foreground">
+      <p className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
+        {!isLoggedIn ? (
+          <BrandIconLink href="/" size={20} blend className="-ml-0.5" />
+        ) : null}
         <span>{greeting}</span>
         <Moon
           className="size-3.5 fill-amber-200/90 stroke-amber-500"

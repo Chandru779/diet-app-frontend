@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { MealNavLink } from "@/components/app/meal-nav-link";
 import { Flame } from "lucide-react";
 import { MealCoverImage } from "@/components/app/meal-cover-image";
 import type { DiscoverMeal } from "@/lib/types/meal-discover";
@@ -11,7 +11,7 @@ type FeedRecentlyViewedCardProps = {
 
 export function FeedRecentlyViewedCard({ meal }: FeedRecentlyViewedCardProps) {
   return (
-    <Link
+    <MealNavLink
       href={`/feed/${meal.id}`}
       className="flex w-[4.75rem] shrink-0 snap-start flex-col items-center gap-1.5"
     >
@@ -32,6 +32,6 @@ export function FeedRecentlyViewedCard({ meal }: FeedRecentlyViewedCardProps) {
         <Flame className="size-2.5 text-rose-500" />
         {Math.round(meal.caloriesKcal)} kcal
       </span>
-    </Link>
+    </MealNavLink>
   );
 }

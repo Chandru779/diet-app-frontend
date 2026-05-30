@@ -11,17 +11,20 @@ import { FeedCreateMealBanner } from "@/components/app/feed/feed-create-meal-ban
 import { fetchCollections } from "@/lib/api/collections";
 import type { MealCollectionSummary } from "@/lib/api/collections";
 import type { FeedSection } from "@/lib/types/feed";
+import { cn } from "@/lib/utils";
 
 type FeedHomeSectionsProps = {
   sections: FeedSection[];
   onViewAll?: (sectionId: string) => void;
   onExploreCategory?: (slug: string) => void;
+  className?: string;
 };
 
 export function FeedHomeSections({
   sections,
   onViewAll,
   onExploreCategory,
+  className,
 }: FeedHomeSectionsProps) {
   const [collections, setCollections] = useState<MealCollectionSummary[]>([]);
 
@@ -40,7 +43,7 @@ export function FeedHomeSections({
   }, []);
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className={cn("flex flex-col gap-3 -mt-1.5", className)}>
       {sections.map((section) => {
         if (section.type === "carousel") {
           const isRecentlyViewed = section.id === "recently-viewed";

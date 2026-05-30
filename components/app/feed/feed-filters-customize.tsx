@@ -15,7 +15,7 @@ export function FeedFiltersCustomize({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-2 rounded-xl border border-emerald-100/90 bg-emerald-50/80 px-3 py-2 text-left shadow-sm transition hover:bg-emerald-50 active:scale-[0.99]"
+      className="meal-card flex w-full items-center gap-2 rounded-xl bg-emerald-50/80 px-3 py-2 text-left shadow-sm transition hover:bg-emerald-50 active:scale-[0.99]"
     >
       <SlidersHorizontal
         className="size-4 shrink-0 text-primary"

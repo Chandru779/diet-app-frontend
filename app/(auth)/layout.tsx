@@ -15,7 +15,7 @@ export default function AuthLayout({
           subtle "Explore" link on the right. Sits over the dark top
           gradient, so text is white for legibility. */}
       <header className="relative z-10 flex items-center justify-between px-4 pt-5 sm:px-8 sm:pt-7">
-        <Logo href="/feed" size="md" className="!text-white drop-shadow-sm" />
+        <Logo href="/" size="md" className="!text-white drop-shadow-sm" />
 
         <Link
           href="/feed"

@@ -27,9 +27,10 @@ export function FeedMacroChips({ active, onToggle }: FeedMacroChipsProps) {
               aria-pressed={isActive}
               className={cn(
                 "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition active:scale-[0.97]",
-                chip.borderClass,
                 chip.textClass,
-                isActive ? chip.bgActiveClass : "bg-white",
+                isActive
+                  ? `${chip.bgActiveClass} border-gray-200`
+                  : `bg-white ${chip.borderClass}`,
               )}
             >
               <Icon className="size-3.5" strokeWidth={2.25} aria-hidden />
