@@ -11,7 +11,7 @@ type FeedMacroChipsProps = {
 export function FeedMacroChips({ active, onToggle }: FeedMacroChipsProps) {
   return (
     <div
-      className="-mx-5 mt-2.5 overflow-x-auto px-5 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="-mx-5 overflow-x-auto px-5 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       role="toolbar"
       aria-label="Macro and diet filters"
     >

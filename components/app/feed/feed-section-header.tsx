@@ -5,7 +5,7 @@ type FeedSectionHeaderProps = {
 
 export function FeedSectionHeader({ title, onViewAll }: FeedSectionHeaderProps) {
   return (
-    <div className="mb-3 flex items-center justify-between">
+    <div className="flex items-center justify-between">
       <h2 className="font-heading text-lg font-bold text-foreground">{title}</h2>
       {onViewAll ? (
         <button

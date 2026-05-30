@@ -40,13 +40,17 @@ export function FeedHomeSections({
   }, []);
 
   return (
-    <div className="mt-5 space-y-7">
+    <div className="flex flex-col gap-3">
       {sections.map((section) => {
         if (section.type === "carousel") {
           const isRecentlyViewed = section.id === "recently-viewed";
 
           return (
-            <section key={section.id} aria-labelledby={`section-${section.id}`}>
+            <section
+              key={section.id}
+              className="flex flex-col gap-3"
+              aria-labelledby={`section-${section.id}`}
+            >
               <FeedSectionHeader
                 title={section.title}
                 onViewAll={
@@ -54,16 +58,18 @@ export function FeedHomeSections({
                 }
               />
               <div
-                className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                className="-mx-4 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                 id={`section-${section.id}`}
               >
-                {section.items.map((meal) =>
-                  isRecentlyViewed ? (
-                    <FeedRecentlyViewedCard key={meal.id} meal={meal} />
-                  ) : (
-                    <FeedTodaysPickCard key={meal.id} meal={meal} />
-                  ),
-                )}
+                <div className="flex w-max snap-x snap-mandatory gap-3 px-4">
+                  {section.items.map((meal) =>
+                    isRecentlyViewed ? (
+                      <FeedRecentlyViewedCard key={meal.id} meal={meal} />
+                    ) : (
+                      <FeedTodaysPickCard key={meal.id} meal={meal} />
+                    ),
+                  )}
+                </div>
               </div>
             </section>
           );
@@ -71,7 +77,11 @@ export function FeedHomeSections({
 
         if (section.type === "list") {
           return (
-            <section key={section.id} aria-labelledby={`section-${section.id}`}>
+            <section
+              key={section.id}
+              className="flex flex-col gap-3"
+              aria-labelledby={`section-${section.id}`}
+            >
               <FeedSectionHeader
                 title={section.title}
                 onViewAll={
@@ -91,7 +101,11 @@ export function FeedHomeSections({
 
         if (section.type === "category_grid") {
           return (
-            <section key={section.id} aria-labelledby={`section-${section.id}`}>
+            <section
+              key={section.id}
+              className="flex flex-col gap-3"
+              aria-labelledby={`section-${section.id}`}
+            >
               <FeedSectionHeader
                 title={section.title}
                 onViewAll={
@@ -99,17 +113,19 @@ export function FeedHomeSections({
                 }
               />
               <div
-                className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                className="-mx-4 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                 id={`section-${section.id}`}
               >
-                {(section.categories ?? []).map((cat) => (
-                  <FeedExploreTile
-                    key={cat.slug}
-                    slug={cat.slug}
-                    label={cat.label}
-                    onSelect={onExploreCategory}
-                  />
-                ))}
+                <div className="flex w-max snap-x snap-mandatory gap-3 px-4">
+                  {(section.categories ?? []).map((cat) => (
+                    <FeedExploreTile
+                      key={cat.slug}
+                      slug={cat.slug}
+                      label={cat.label}
+                      onSelect={onExploreCategory}
+                    />
+                  ))}
+                </div>
               </div>
             </section>
           );
@@ -119,12 +135,17 @@ export function FeedHomeSections({
       })}
 
       {collections.length > 0 ? (
-        <section aria-labelledby="section-meal-collections">
+        <section
+          className="flex flex-col gap-3"
+          aria-labelledby="section-meal-collections"
+        >
           <FeedSectionHeader title="Meal Collections" />
-          <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {collections.map((col, i) => (
-              <FeedCollectionBanner key={col.id} collection={col} index={i} />
-            ))}
+          <div className="-mx-4 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex w-max snap-x snap-mandatory gap-3 px-4">
+              {collections.map((col, i) => (
+                <FeedCollectionBanner key={col.id} collection={col} index={i} />
+              ))}
+            </div>
           </div>
         </section>
       ) : null}

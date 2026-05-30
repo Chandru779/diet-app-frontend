@@ -3,11 +3,11 @@ import {
   Droplets,
   Flame,
   Gauge,
+  LayoutGrid,
   Leaf,
   MilkOff,
-  Dumbbell,
   BicepsFlexed,
-  Timer,
+  Zap,
   Wheat,
 } from "lucide-react";
 
@@ -37,8 +37,8 @@ export const FEED_PRIMARY_CATEGORIES: PrimaryCategory[] = [
     icon: Gauge,
   },
   { id: "veg-meals", label: "Veg Meals", slug: "veg-meals", icon: Leaf },
-  { id: "quick-meals", label: "Quick Meals", slug: "quick-meals", icon: Timer },
-  { id: "more", label: "More", opensFilters: true, icon: Flame },
+  { id: "quick-meals", label: "Quick Meals", slug: "quick-meals", icon: Zap },
+  { id: "more", label: "More", opensFilters: true, icon: LayoutGrid },
 ];
 
 export const FEED_CATEGORY_GROUP_LABELS: Record<string, string> = {
@@ -72,7 +72,7 @@ export const FEED_MACRO_CHIPS: MacroChip[] = [
     id: "protein-30g-plus",
     label: "30g+ Protein",
     slug: "protein-30g-plus",
-    icon: Dumbbell,
+    icon: BicepsFlexed,
     borderClass: "border-emerald-200",
     textClass: "text-emerald-800",
     bgActiveClass: "bg-emerald-50",
