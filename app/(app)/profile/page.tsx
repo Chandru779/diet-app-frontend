@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { AppMenuRow } from "@/components/app/app-menu-row";
 import { AppPageHeader } from "@/components/app/app-page-header";
+import { ProfileEditForm } from "@/components/app/profile-edit-form";
 import { RequireAuth } from "@/components/app/require-auth";
 import { deriveDisplayName } from "@/lib/auth/display-name";
 import { useAuthStore } from "@/lib/store/auth-store";
@@ -20,18 +21,22 @@ function ProfileContent() {
   const logout = useAuthStore((s) => s.logout);
   const username = user?.username;
   const email = user?.email;
-  const { firstName, initial } = deriveDisplayName(username);
+  const display = deriveDisplayName(
+    user?.firstName
+      ? [user.firstName, user.lastName].filter(Boolean).join(" ")
+      : username,
+  );
 
   return (
     <div className="flex flex-col gap-3 pb-4">
       <AppPageHeader title="Profile" subtitle="Your account and shortcuts">
         <div className="flex items-center gap-3">
           <div className="flex size-14 shrink-0 items-center justify-center rounded-full bg-primary text-xl font-bold text-primary-foreground shadow-sm ring-2 ring-white">
-            {initial}
+            {display.initial}
           </div>
           <div className="min-w-0">
             <p className="font-heading text-lg font-bold leading-tight text-foreground">
-              {firstName}
+              {display.firstName}
             </p>
             {username ? (
               <p className="mt-0.5 text-[13px] font-medium text-muted-foreground">
@@ -47,6 +52,8 @@ function ProfileContent() {
           </div>
         </div>
       </AppPageHeader>
+
+      <ProfileEditForm />
 
       <section className="flex flex-col gap-2" aria-label="Account menu">
         <p className="px-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70">

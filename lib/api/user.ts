@@ -1,18 +1,13 @@
 import { http } from "./http";
-import type { ApiUser } from "@/lib/types/meal";
+import type { AuthUser } from "@/lib/types/auth";
 
-/** GET /users — public list (id, username, timestamps). */
-export async function fetchUsers(): Promise<ApiUser[]> {
-  const res = await http.get<ApiUser[]>("/users", {
-    headers: { "Cache-Control": "no-store" },
-  });
-  return res.data;
-}
+export type UpdateProfileBody = {
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+};
 
-/** GET /users/:id */
-export async function fetchUserById(id: string): Promise<ApiUser> {
-  const res = await http.get<ApiUser>(`/users/${encodeURIComponent(id)}`, {
-    headers: { "Cache-Control": "no-store" },
-  });
+export async function updateProfile(body: UpdateProfileBody): Promise<AuthUser> {
+  const res = await http.patch<AuthUser>("/users/me", body);
   return res.data;
 }

@@ -1,26 +1,58 @@
 import { http } from "./http";
-import type { AuthSessionPayload, AuthUser } from "@/lib/types/auth";
+import type {
+  AuthSessionPayload,
+  AuthUser,
+  AuthVerifyResponse,
+  EmailStartResponse,
+  GoogleOAuthStartResponse,
+} from "@/lib/types/auth";
 
-export type SignInBody = {
-  email: string;
-  password: string;
-};
-
-export type SignUpBody = {
-  email: string;
-  password: string;
-  username: string;
-  firstName?: string;
-  lastName?: string;
-};
-
-export async function signIn(body: SignInBody): Promise<AuthSessionPayload> {
-  const res = await http.post<AuthSessionPayload>("/auth/signin", body);
+export async function startEmailAuth(
+  email: string,
+  captchaToken?: string,
+): Promise<EmailStartResponse> {
+  const res = await http.post<EmailStartResponse>("/auth/email/start", {
+    email,
+    captchaToken,
+  });
   return res.data;
 }
 
-export async function signUp(body: SignUpBody): Promise<AuthSessionPayload> {
-  const res = await http.post<AuthSessionPayload>("/auth/signup", body);
+export async function verifyEmailAuth(
+  flowId: string,
+  code: string,
+): Promise<AuthVerifyResponse> {
+  const res = await http.post<AuthVerifyResponse>("/auth/email/verify", {
+    flowId,
+    code,
+  });
+  return res.data;
+}
+
+export async function resendEmailAuth(flowId: string): Promise<void> {
+  await http.post("/auth/email/resend", { flowId });
+}
+
+export async function startGoogleAuth(): Promise<GoogleOAuthStartResponse> {
+  const res = await http.get<GoogleOAuthStartResponse>("/auth/oauth/google");
+  return res.data;
+}
+
+export async function completeGoogleAuth(
+  flowId: string,
+  clerkSessionId?: string,
+): Promise<AuthVerifyResponse> {
+  const res = await http.post<AuthVerifyResponse>("/auth/oauth/complete", {
+    flowId,
+    clerkSessionId,
+  });
+  return res.data;
+}
+
+export async function setUsername(username: string): Promise<AuthSessionPayload> {
+  const res = await http.post<AuthSessionPayload>("/auth/username", {
+    username,
+  });
   return res.data;
 }
 
