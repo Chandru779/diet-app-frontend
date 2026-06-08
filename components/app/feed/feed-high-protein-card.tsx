@@ -4,7 +4,6 @@ import { MealNavLink } from "@/components/app/meal-nav-link";
 import { ChefHat, Clock, Flame, Utensils } from "lucide-react";
 import { MealCoverImage } from "@/components/app/meal-cover-image";
 import { FavoriteButton } from "@/components/app/feed/favorite-button";
-import { MacroBarsChart } from "@/components/app/feed/macro-bars-chart";
 import type { DiscoverMeal } from "@/lib/types/meal-discover";
 
 type FeedHighProteinCardProps = {
@@ -44,36 +43,29 @@ export function FeedHighProteinCard({ meal }: FeedHighProteinCardProps) {
           : null;
 
   return (
-    <MealNavLink
-      href={`/feed/${meal.id}`}
-      className="meal-card group relative flex gap-3 rounded-2xl bg-white p-3 shadow-[0_1px_12px_rgba(0,0,0,0.06)] transition hover:shadow-[0_4px_20px_rgba(0,0,0,0.1)]"
-    >
-      <div className="absolute right-2 top-2 z-10">
-        <FavoriteButton
-          mealId={meal.id}
-          initialFavorited={meal.isFavorited}
-          className="size-8 shadow-sm"
-        />
-      </div>
+    <div className="relative">
+      <MealNavLink
+        href={`/feed/${meal.id}`}
+        className="meal-card group flex gap-3 rounded-2xl bg-white p-3 shadow-[0_1px_12px_rgba(0,0,0,0.06)] transition hover:shadow-[0_4px_20px_rgba(0,0,0,0.1)]"
+      >
+        <div className="relative h-[5.5rem] w-[5.5rem] shrink-0 overflow-hidden rounded-xl bg-muted">
+          {meal.image ? (
+            <MealCoverImage
+              src={meal.image}
+              mealId={meal.id}
+              alt={meal.title}
+              fill
+              className="object-cover"
+              sizes="88px"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center">
+              <Utensils className="size-6 text-muted-foreground/30" />
+            </div>
+          )}
+        </div>
 
-      <div className="relative h-[5.5rem] w-[5.5rem] shrink-0 overflow-hidden rounded-xl bg-muted">
-        {meal.image ? (
-          <MealCoverImage
-            src={meal.image}
-            mealId={meal.id}
-            alt={meal.title}
-            fill
-            className="object-cover"
-            sizes="88px"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <Utensils className="size-6 text-muted-foreground/30" />
-          </div>
-        )}
-      </div>
-
-      <div className="min-w-0 flex-1 pr-8">
+        <div className="min-w-0 flex-1">
         <h3 className="line-clamp-1 font-heading text-[15px] font-bold text-foreground">
           {meal.title}
         </h3>
@@ -112,16 +104,33 @@ export function FeedHighProteinCard({ meal }: FeedHighProteinCardProps) {
             </span>
           ) : null}
         </div>
+        <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[10px] font-bold tabular-nums">
+          <span className="text-emerald-600">
+            P <span className="font-semibold">{Math.round(meal.proteinG)}g</span>
+          </span>
+          <span className="text-blue-600">
+            C <span className="font-semibold">{Math.round(meal.carbsG)}g</span>
+          </span>
+          <span className="text-orange-500">
+            F <span className="font-semibold">{Math.round(meal.fatG)}g</span>
+          </span>
+          {meal.fiberG != null && meal.fiberG > 0 ? (
+            <span className="text-violet-600">
+              Fi{" "}
+              <span className="font-semibold">{Math.round(meal.fiberG)}g</span>
+            </span>
+          ) : null}
+        </div>
       </div>
+      </MealNavLink>
 
-      <MacroBarsChart
-        proteinG={meal.proteinG}
-        carbsG={meal.carbsG}
-        fatG={meal.fatG}
-        fiberG={meal.fiberG}
-        compact
-        className="shrink-0 self-center pr-1"
-      />
-    </MealNavLink>
+      <div className="absolute right-2 top-2 z-10">
+        <FavoriteButton
+          mealId={meal.id}
+          initialFavorited={meal.isFavorited}
+          className="size-8 shadow-sm"
+        />
+      </div>
+    </div>
   );
 }

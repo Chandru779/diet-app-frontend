@@ -8,6 +8,8 @@
  */
 @layer base {
   :root {
+    --vv-bottom-inset: 0px;
+
     /* Surfaces */
     --background: oklch(0.971 0.008 80);
     --foreground: oklch(0.14 0.015 248);

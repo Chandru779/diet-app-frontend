@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -15,26 +16,33 @@ import {
   ImagePlus,
   Loader2,
   Plus,
+  Salad,
   Search,
   Trash2,
   X,
 } from "lucide-react";
 import { useFeedStore } from "@/lib/store/feed-store";
 import {
+  FEED_MEAL_TYPE_OPTIONS,
+  FEED_PREP_TIME_OPTIONS,
+  type PrepTimePreset,
+} from "@/lib/config/feed-advanced-filters";
+import { cn } from "@/lib/utils";
+import {
   defaultQuantityFieldsForCatalogItem,
   getCatalogItemByKey,
   type MealCatalogItem,
 } from "@/lib/types/meal-catalog";
-import { NUTRIENT_COLORS } from "@/lib/constants/nutrients";
-import { uploadMealImage } from "@/lib/api/media";
+import type { MealType } from "@/lib/types/meal";
 import { createMeal, fetchMealCatalog } from "@/lib/api/meal";
 import {
   buildPreparationStepsPayload,
   MealPreparationEditor,
   type PreparationStepRow,
 } from "@/components/app/meal-preparation-editor";
+import { NUTRIENT_COLORS } from "@/lib/constants/nutrients";
 
-// ── Types ────────────────────────────────────────────────────────────────────
+import { uploadMealImage } from "@/lib/api/media";
 
 type IngredientRow = {
   id: string;
@@ -75,6 +83,82 @@ const QUICK_ML = [50, 100, 150, 200, 250] as const;
 
 const MEAL_IMAGE_MAX_BYTES = 2 * 1024 * 1024;
 
+const CREATE_MEAL_TYPE_OPTIONS: {
+  value: MealType;
+  label: string;
+  emoji: string;
+}[] = [
+  ...FEED_MEAL_TYPE_OPTIONS,
+  { value: "pre_workout", label: "Pre-workout", emoji: "💪" },
+  { value: "post_workout", label: "Post-workout", emoji: "🏋️" },
+  { value: "quick_meals", label: "Quick", emoji: "⚡" },
+];
+
+function prepPresetToMinutes(preset: PrepTimePreset): number {
+  if (preset === 999) return 75;
+  return preset;
+}
+
+function CompactToggle({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <label className="flex cursor-pointer items-center justify-between gap-3">
+      <span className="text-sm text-foreground">{label}</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className={cn(
+          "relative h-5 w-9 shrink-0 rounded-full transition-colors",
+          checked ? "bg-primary" : "bg-muted",
+        )}
+      >
+        <span
+          className={cn(
+            "absolute top-0.5 size-4 rounded-full bg-white shadow transition-transform",
+            checked ? "left-[18px]" : "left-0.5",
+          )}
+        />
+      </button>
+    </label>
+  );
+}
+
+function SectionCard({
+  title,
+  description,
+  action,
+  children,
+}: {
+  title: string;
+  description?: string;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section className="rounded-2xl border border-border/60 bg-muted/10 p-4">
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+          {description ? (
+            <p className="mt-0.5 text-[11px] text-muted-foreground">{description}</p>
+          ) : null}
+        </div>
+        {action}
+      </div>
+      {children}
+    </section>
+  );
+}
+
 // ── Main component ───────────────────────────────────────────────────────────
 
 export function CreateMealSheet() {
@@ -100,6 +184,13 @@ export function CreateMealSheet() {
     "idle" | "loading" | "ok" | "error"
   >("idle");
   const [prepSteps, setPrepSteps] = useState<PreparationStepRow[]>([]);
+  const [mealType, setMealType] = useState<MealType | null>(null);
+  const [prepTimePreset, setPrepTimePreset] = useState<PrepTimePreset | null>(
+    null,
+  );
+  const [isQuick, setIsQuick] = useState(false);
+  const [isBeginnerFriendly, setIsBeginnerFriendly] = useState(false);
+  const [isBudgetFriendly, setIsBudgetFriendly] = useState(false);
 
   // Lock body scroll while sheet is open
   useEffect(() => {
@@ -191,6 +282,15 @@ export function CreateMealSheet() {
   const filledIngredientCount = rows.filter((r) => r.ingredientKey.trim()).length;
   const showPreparation = hasValidRows || filledIngredientCount >= 2;
 
+  const derivedIsVegetarian = useMemo(() => {
+    for (const row of rows) {
+      if (!row.ingredientKey) continue;
+      const item = getCatalogItemByKey(catalog, row.ingredientKey);
+      if (item && !item.isVegetarian) return false;
+    }
+    return true;
+  }, [rows, catalog]);
+
   useEffect(() => {
     if (!showPreparation) return;
     setPrepSteps((prev) =>
@@ -260,6 +360,11 @@ export function CreateMealSheet() {
     ]);
     setMealImageFile(null);
     setPrepSteps([]);
+    setMealType(null);
+    setPrepTimePreset(null);
+    setIsQuick(false);
+    setIsBeginnerFriendly(false);
+    setIsBudgetFriendly(false);
     setError(null);
     setSuccess(false);
   }
@@ -312,7 +417,16 @@ export function CreateMealSheet() {
     const payload = {
       title: title.trim(),
       description: description.trim() || undefined,
-      isVegetarian: true,
+      isVegetarian: derivedIsVegetarian,
+      isPublic: true,
+      ...(mealType ? { mealType } : {}),
+      ...(prepTimePreset != null
+        ? { prepTimeMinutes: prepPresetToMinutes(prepTimePreset) }
+        : {}),
+      ...(isBeginnerFriendly ? { difficulty: "easy" as const } : {}),
+      isQuick: isQuick || prepTimePreset === 15,
+      isBeginnerFriendly,
+      isBudgetFriendly,
       ...(image ? { image } : {}),
       ...(preparationSteps ? { preparationSteps } : {}),
       ingredients: validRows.map((row) => ({
@@ -354,121 +468,320 @@ export function CreateMealSheet() {
 
       {/* ── Sheet panel ── */}
       <div
-        className={`fixed inset-x-0 bottom-0 z-[60] flex max-h-[90dvh] flex-col rounded-t-3xl bg-white shadow-[0_-8px_40px_rgba(0,0,0,0.12)] transition-transform duration-300 ease-out ${
+        className={`fixed inset-x-0 bottom-0 z-[60] flex max-h-[90dvh] flex-col overflow-hidden rounded-t-3xl bg-white shadow-[0_-8px_40px_rgba(0,0,0,0.12)] transition-transform duration-300 ease-out ${
           isOpen ? "translate-y-0" : "translate-y-full"
         }`}
       >
-        {/* Drag handle */}
-        <div className="flex shrink-0 justify-center pt-3 pb-1">
-          <div className="h-1 w-10 rounded-full bg-muted" />
-        </div>
-
         {/* Header */}
-        <div className="flex shrink-0 items-center justify-between border-b border-border/40 px-5 py-3">
-          <div>
-            <h2 className="font-heading text-lg font-bold">New Meal Post</h2>
-            <p className="text-xs text-muted-foreground">
-              Add ingredients to auto-calculate macros
-            </p>
+        <div className="shrink-0 rounded-t-3xl border-b border-border/40 bg-gradient-to-r from-emerald-50/80 to-white">
+          <div className="flex justify-center pt-3 pb-1">
+            <div className="h-1 w-10 rounded-full bg-emerald-200/70" />
           </div>
-          <button
-            type="button"
-            onClick={close}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground transition hover:text-foreground"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
-
-        {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
-          {/* Meal name */}
-          <div>
-            <label
-              htmlFor="meal-title"
-              className="mb-1.5 block text-sm font-semibold text-foreground"
-            >
-              Meal name{" "}
-              <span className="text-rose-500" aria-hidden>
-                *
-              </span>
-            </label>
-            <input
-              id="meal-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Grilled Chicken Bowl"
-              className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-ring focus:ring-offset-1"
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label
-              htmlFor="meal-desc"
-              className="mb-1.5 block text-sm font-medium text-muted-foreground"
-            >
-              Description{" "}
-              <span className="text-muted-foreground/50">(optional)</span>
-            </label>
-            <input
-              id="meal-desc"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Short description…"
-              maxLength={100}
-              className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-ring focus:ring-offset-1"
-            />
-          </div>
-
-          {/* Ingredients */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <label className="text-sm font-semibold text-foreground">
-                Ingredients{" "}
-                <span className="text-rose-500" aria-hidden>
-                  *
-                </span>
-              </label>
-              <span className="shrink-0 rounded-md bg-muted/80 px-2 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
-                {rows.length} item{rows.length === 1 ? "" : "s"}
-              </span>
+          <div className="flex items-center justify-between px-5 pb-3.5">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                <Salad className="size-5" strokeWidth={1.75} />
+              </div>
+              <div className="min-w-0">
+                <h2 className="font-heading text-lg font-bold">Create Meal</h2>
+                <p className="text-xs text-muted-foreground">
+                  Share your recipe with the community feed
+                </p>
+              </div>
             </div>
-
-            <div
-              className="overflow-hidden rounded-xl border border-border/80 bg-background shadow-sm"
-              role="list"
-              aria-label="Meal ingredients"
-            >
-              {rows.map((row, idx) => (
-                <IngredientRowWidget
-                  key={row.id}
-                  catalog={catalog}
-                  catalogStatus={catalogStatus}
-                  row={row}
-                  position={idx + 1}
-                  total={rows.length}
-                  canRemove={rows.length > 1}
-                  onIngredientChange={(key) => setRowIngredient(row.id, key)}
-                  onQtyChange={(qty) => setRowQty(row.id, qty)}
-                  onQuantityUnitChange={(u) =>
-                    setRowQuantityUnit(row.id, u)
-                  }
-                  onRemove={() => removeRow(row.id)}
-                />
-              ))}
-            </div>
-
             <button
               type="button"
-              onClick={addRow}
-              disabled={catalogStatus === "idle" || catalogStatus === "loading"}
-              className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-2.5 text-sm font-medium text-muted-foreground transition hover:border-primary/50 hover:bg-primary/5 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={close}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/80 text-muted-foreground shadow-sm transition hover:text-foreground"
             >
-              <Plus className="size-4" />
-              Add ingredient
+              <X className="size-4" />
             </button>
           </div>
+        </div>
+
+        {hasValidRows ? (
+          <div className="shrink-0 border-b border-border/40 bg-white px-5 py-2.5">
+            <div className="grid grid-cols-4 gap-1.5">
+              {(
+                [
+                  {
+                    label: "Protein",
+                    value: `${liveTotal.proteinG}g`,
+                    nc: NUTRIENT_COLORS.protein,
+                  },
+                  {
+                    label: "Carbs",
+                    value: `${liveTotal.carbsG}g`,
+                    nc: NUTRIENT_COLORS.carbs,
+                  },
+                  {
+                    label: "Fat",
+                    value: `${liveTotal.fatG}g`,
+                    nc: NUTRIENT_COLORS.fat,
+                  },
+                  {
+                    label: "Cal",
+                    value: `${liveTotal.caloriesKcal}`,
+                    nc: NUTRIENT_COLORS.calories,
+                  },
+                ] as const
+              ).map(({ label, value, nc }) => (
+                <div
+                  key={label}
+                  className={`rounded-lg border px-1.5 py-2 text-center ${nc.bgClass} ${nc.borderClass}`}
+                >
+                  <div className={`text-xs font-bold tabular-nums ${nc.textClass}`}>
+                    {value}
+                  </div>
+                  <div className="mt-0.5 text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
+                    {label}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {/* Scrollable body */}
+        <div className="flex-1 space-y-3 overflow-y-auto px-5 pb-4 pt-3">
+          <input
+            ref={mealImageInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            className="sr-only"
+            aria-label="Choose meal photo"
+            onChange={(e) => {
+              const f = e.target.files?.[0] ?? null;
+              onMealImageSelected(f);
+              e.target.value = "";
+            }}
+          />
+
+          <SectionCard
+            title="Basics"
+            action={
+              <div className="relative shrink-0">
+                <button
+                  type="button"
+                  onClick={() => mealImageInputRef.current?.click()}
+                  aria-label={mealImagePreviewUrl ? "Change meal photo" : "Add meal photo"}
+                  className={cn(
+                    "flex size-9 items-center justify-center overflow-hidden rounded-xl border transition active:scale-[0.97]",
+                    mealImagePreviewUrl
+                      ? "border-primary/30 bg-white"
+                      : "border-border/60 bg-white text-muted-foreground hover:border-primary/40 hover:text-primary",
+                  )}
+                >
+                  {mealImagePreviewUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element -- blob preview */
+                    <img
+                      src={mealImagePreviewUrl}
+                      alt=""
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <ImagePlus className="size-4" />
+                  )}
+                </button>
+                {mealImagePreviewUrl ? (
+                  <button
+                    type="button"
+                    onClick={() => setMealImageFile(null)}
+                    aria-label="Remove meal photo"
+                    className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-foreground text-background shadow-sm"
+                  >
+                    <X className="size-2.5" />
+                  </button>
+                ) : null}
+              </div>
+            }
+          >
+            <div className="space-y-2.5">
+              <div>
+                <label
+                  htmlFor="meal-title"
+                  className="mb-1 block text-sm font-semibold text-foreground"
+                >
+                  Meal name{" "}
+                  <span className="text-rose-500" aria-hidden>
+                    *
+                  </span>
+                </label>
+                <input
+                  id="meal-title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Grilled Chicken Bowl"
+                  className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="meal-desc"
+                  className="mb-1 block text-sm font-medium text-muted-foreground"
+                >
+                  Description{" "}
+                  <span className="text-muted-foreground/50">(optional)</span>
+                </label>
+                <input
+                  id="meal-desc"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Short description for the feed…"
+                  maxLength={100}
+                  className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                />
+              </div>
+            </div>
+          </SectionCard>
+
+          <SectionCard
+            title="Details"
+            description="Optional tags to help others discover your meal"
+          >
+            <div className="space-y-3">
+              <div>
+                <label
+                  htmlFor="meal-type"
+                  className="mb-1.5 block text-xs font-semibold text-foreground"
+                >
+                  Meal type
+                </label>
+                <div className="relative">
+                  <select
+                    id="meal-type"
+                    value={mealType ?? ""}
+                    onChange={(e) =>
+                      setMealType(
+                        e.target.value ? (e.target.value as MealType) : null,
+                      )
+                    }
+                    className="h-10 w-full appearance-none rounded-xl border border-input bg-background py-2 pl-3 pr-9 text-sm outline-none transition focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                  >
+                    <option value="">Select type (optional)</option>
+                    {CREATE_MEAL_TYPE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.emoji} {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronsUpDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground opacity-60" />
+                </div>
+              </div>
+
+              {filledIngredientCount > 0 ? (
+                <p className="text-[11px] text-muted-foreground">
+                  Diet:{" "}
+                  <span
+                    className={cn(
+                      "font-semibold",
+                      derivedIsVegetarian ? "text-emerald-700" : "text-orange-700",
+                    )}
+                  >
+                    {derivedIsVegetarian ? "Vegetarian" : "Non-veg"}
+                  </span>
+                  <span className="text-muted-foreground/70">
+                    {" "}
+                    · detected from ingredients
+                  </span>
+                </p>
+              ) : null}
+
+              <div>
+                <p className="mb-1.5 text-xs font-semibold text-foreground">Prep time</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {FEED_PREP_TIME_OPTIONS.map((opt) => {
+                    const selected = prepTimePreset === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() =>
+                          setPrepTimePreset((prev) =>
+                            prev === opt.value ? null : opt.value,
+                          )
+                        }
+                        aria-pressed={selected}
+                        className={cn(
+                          "rounded-full border px-3 py-1.5 text-[11px] font-semibold transition active:scale-[0.98]",
+                          selected
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border/60 bg-white text-foreground",
+                        )}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-2 rounded-xl border border-border/50 bg-white px-3 py-2.5">
+                <CompactToggle
+                  label="Quick meal"
+                  checked={isQuick || prepTimePreset === 15}
+                  onChange={(next) => {
+                    setIsQuick(next);
+                    if (!next && prepTimePreset === 15) {
+                      setPrepTimePreset(null);
+                    }
+                  }}
+                />
+                <CompactToggle
+                  label="Beginner friendly"
+                  checked={isBeginnerFriendly}
+                  onChange={setIsBeginnerFriendly}
+                />
+                <CompactToggle
+                  label="Budget friendly"
+                  checked={isBudgetFriendly}
+                  onChange={setIsBudgetFriendly}
+                />
+              </div>
+            </div>
+          </SectionCard>
+
+          <SectionCard
+            title="Ingredients"
+            description="Required — macros are calculated automatically"
+          >
+            <div className="space-y-3">
+              <div
+                className="overflow-hidden rounded-xl border border-border/80 bg-background shadow-sm"
+                role="list"
+                aria-label="Meal ingredients"
+              >
+                {rows.map((row, idx) => (
+                  <IngredientRowWidget
+                    key={row.id}
+                    catalog={catalog}
+                    catalogStatus={catalogStatus}
+                    row={row}
+                    position={idx + 1}
+                    total={rows.length}
+                    canRemove={rows.length > 1}
+                    onIngredientChange={(key) => setRowIngredient(row.id, key)}
+                    onQtyChange={(qty) => setRowQty(row.id, qty)}
+                    onQuantityUnitChange={(u) =>
+                      setRowQuantityUnit(row.id, u)
+                    }
+                    onRemove={() => removeRow(row.id)}
+                  />
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={addRow}
+                disabled={catalogStatus === "idle" || catalogStatus === "loading"}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-2.5 text-sm font-medium text-muted-foreground transition hover:border-primary/50 hover:bg-primary/5 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Plus className="size-4" />
+                Add ingredient
+              </button>
+            </div>
+          </SectionCard>
 
           {catalogStatus === "error" ? (
             <div className="flex items-start gap-2.5 rounded-xl border border-destructive/25 bg-destructive/5 px-4 py-3">
@@ -481,141 +794,12 @@ export function CreateMealSheet() {
           ) : null}
 
           {showPreparation ? (
-            <MealPreparationEditor
-              steps={prepSteps}
-              onChange={setPrepSteps}
-            />
-          ) : null}
-
-          {/* Shown once there is at least one valid ingredient: between ingredients and macro summary */}
-          {hasValidRows ? (
-            <div className="rounded-xl border border-border/80 bg-muted/15 p-3 sm:p-3.5">
-              <div className="mb-2 flex items-start justify-between gap-2">
-                <div>
-                  <label className="text-sm font-semibold text-foreground">
-                    Meal photo{" "}
-                    <span className="font-normal text-muted-foreground">
-                      (optional)
-                    </span>
-                  </label>
-                  <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
-                    Add a picture of the finished dish for the feed — you can skip
-                    this and post with text only.
-                  </p>
-                </div>
-                <ImagePlus
-                  className="mt-0.5 size-5 shrink-0 text-primary/70"
-                  aria-hidden
-                />
-              </div>
-
-              <input
-                ref={mealImageInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                className="sr-only"
-                aria-label="Choose meal photo"
-                onChange={(e) => {
-                  const f = e.target.files?.[0] ?? null;
-                  onMealImageSelected(f);
-                  e.target.value = "";
-                }}
-              />
-
-              {mealImagePreviewUrl ? (
-                <div className="space-y-2">
-                  <div className="relative aspect-[16/10] w-full overflow-hidden rounded-lg border border-border/60 bg-muted">
-                    {/* eslint-disable-next-line @next/next/no-img-element -- blob preview */}
-                    <img
-                      src={mealImagePreviewUrl}
-                      alt="Meal preview"
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => mealImageInputRef.current?.click()}
-                      className="rounded-lg border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted"
-                    >
-                      Change photo
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setMealImageFile(null)}
-                      className="rounded-lg border border-transparent px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => mealImageInputRef.current?.click()}
-                  className="flex w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-primary/25 bg-background py-8 transition hover:border-primary/45 hover:bg-primary/[0.04]"
-                >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    <ImagePlus className="size-5" />
-                  </div>
-                  <span className="text-sm font-medium text-foreground">
-                    Tap to add meal photo
-                  </span>
-                  <span className="text-[11px] text-muted-foreground">
-                    JPEG, PNG, WebP or GIF · max 2 MB
-                  </span>
-                </button>
-              )}
-            </div>
-          ) : null}
-
-          {/* Live macro preview */}
-          {hasValidRows ? (
-            <div className="rounded-2xl border border-border/60 bg-muted/25 p-4">
-              <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Estimated totals
-              </p>
-              <div className="grid grid-cols-4 gap-2">
-                {(
-                  [
-                    {
-                      label: "Protein",
-                      value: `${liveTotal.proteinG}g`,
-                      nc: NUTRIENT_COLORS.protein,
-                    },
-                    {
-                      label: "Carbs",
-                      value: `${liveTotal.carbsG}g`,
-                      nc: NUTRIENT_COLORS.carbs,
-                    },
-                    {
-                      label: "Fat",
-                      value: `${liveTotal.fatG}g`,
-                      nc: NUTRIENT_COLORS.fat,
-                    },
-                    {
-                      label: "Cal",
-                      value: `${liveTotal.caloriesKcal}`,
-                      nc: NUTRIENT_COLORS.calories,
-                    },
-                  ] as const
-                ).map(({ label, value, nc }) => (
-                  <div
-                    key={label}
-                    className={`rounded-xl border px-2 py-3 text-center ${nc.bgClass} ${nc.borderClass}`}
-                  >
-                    <div
-                      className={`text-sm font-bold tabular-nums ${nc.textClass}`}
-                    >
-                      {value}
-                    </div>
-                    <div className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                      {label}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <SectionCard
+              title="Preparation"
+              description="Optional — add step-by-step instructions"
+            >
+              <MealPreparationEditor steps={prepSteps} onChange={setPrepSteps} />
+            </SectionCard>
           ) : null}
 
           {/* Error banner */}
@@ -646,12 +830,12 @@ export function CreateMealSheet() {
           >
             {success ? (
               <>
-                <Check className="size-4" /> Posted!
+                <Check className="size-4" /> Published!
               </>
             ) : submitting ? (
-              "Posting…"
+              "Publishing…"
             ) : (
-              "Post Meal"
+              "Publish Meal"
             )}
           </button>
         </div>

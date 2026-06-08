@@ -5,6 +5,10 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { addFavorite, removeFavorite } from "@/lib/api/favorites";
 import { getAuthAccessTokenFromCookie } from "@/lib/auth/auth-cookie";
+import {
+  resolveFavorited,
+  useFavoritesStore,
+} from "@/lib/store/favorites-store";
 import { useFeedStore } from "@/lib/store/feed-store";
 import { useRouter } from "next/navigation";
 
@@ -21,7 +25,10 @@ export function FavoriteButton({
 }: FavoriteButtonProps) {
   const router = useRouter();
   const bumpRefresh = useFeedStore((s) => s.bumpRefresh);
-  const [favorited, setFavorited] = useState(initialFavorited);
+  const overrides = useFavoritesStore((s) => s.overrides);
+  const setFavoritedInStore = useFavoritesStore((s) => s.setFavorited);
+  const clearOverride = useFavoritesStore((s) => s.clearOverride);
+  const favorited = resolveFavorited(mealId, initialFavorited, overrides);
   const [loading, setLoading] = useState(false);
 
   async function toggle(e: React.MouseEvent) {
@@ -36,7 +43,7 @@ export function FavoriteButton({
     if (loading) return;
     setLoading(true);
     const next = !favorited;
-    setFavorited(next);
+    setFavoritedInStore(mealId, next);
 
     try {
       if (next) {
@@ -46,7 +53,11 @@ export function FavoriteButton({
       }
       bumpRefresh();
     } catch {
-      setFavorited(!next);
+      if (next) {
+        clearOverride(mealId);
+      } else {
+        setFavoritedInStore(mealId, true);
+      }
     } finally {
       setLoading(false);
     }
@@ -56,6 +67,10 @@ export function FavoriteButton({
     <button
       type="button"
       onClick={toggle}
+      onMouseDown={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
       disabled={loading}
       aria-label={favorited ? "Remove from favorites" : "Add to favorites"}
       aria-pressed={favorited}

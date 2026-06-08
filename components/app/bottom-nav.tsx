@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bookmark, ClipboardList, Home, Plus, User } from "lucide-react";
+import { Bookmark, ClipboardList, Home, Package, Plus } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { getAuthAccessTokenFromCookie } from "@/lib/auth/auth-cookie";
 import { useAuthStore } from "@/lib/store/auth-store";
@@ -69,14 +69,15 @@ export function BottomNav() {
     pathname === "/my-meals" || pathname.startsWith("/my-meals/");
   const savedActive =
     pathname === "/saved" || pathname.startsWith("/saved/");
-  const profileActive = pathname.startsWith("/profile");
+  const mealPacksActive =
+    pathname === "/meal-packs" || pathname.startsWith("/meal-packs/");
 
   return (
     <nav
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-40"
+      className="pointer-events-none fixed inset-x-0 bottom-[var(--vv-bottom-inset,0px)] z-40"
       aria-label="Main navigation"
     >
-      <div className="bg-feed-header pointer-events-auto rounded-t-[2rem] shadow-[0_-4px_24px_rgba(0,0,0,0.06)]">
+      <div className="bg-feed-header pointer-events-auto relative rounded-t-[2rem] shadow-[0_-4px_24px_rgba(0,0,0,0.06)] after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-[var(--vv-bottom-inset,0px)] after:bg-feed-header">
         <div className="mx-auto grid max-w-2xl grid-cols-5 items-center gap-0.5 px-4 py-2.5 pb-[max(0.65rem,env(safe-area-inset-bottom))]">
           <NavTab
             href="/feed"
@@ -105,15 +106,15 @@ export function BottomNav() {
           </div>
           <NavTab
             href="/saved"
-            label="Collections"
+            label="Saved"
             icon={Bookmark}
             active={savedActive}
           />
           <NavTab
-            href="/profile"
-            label="Profile"
-            icon={User}
-            active={profileActive}
+            href="/meal-packs"
+            label="Packs"
+            icon={Package}
+            active={mealPacksActive}
           />
         </div>
       </div>

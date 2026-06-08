@@ -95,6 +95,11 @@ export type CreateMealPayload = {
   image?: string | null;
   ingredients?: CreateIngredientPayload[];
   preparationSteps?: MealPreparationStep[];
+  prepTimeMinutes?: number;
+  difficulty?: "easy" | "medium" | "hard";
+  isQuick?: boolean;
+  isBeginnerFriendly?: boolean;
+  isBudgetFriendly?: boolean;
 };
 
 /** PATCH /meals/:id — partial update; `null` clears nullable fields. Owner only. */

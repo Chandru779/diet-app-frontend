@@ -46,7 +46,7 @@ export function SavedList() {
   return (
     <div className="flex flex-col gap-3 pb-4">
       <AppPageHeader
-        title="Collections"
+        title="Saved"
         subtitle={
           !loading && !error && count > 0
             ? `${count} saved meal${count === 1 ? "" : "s"}`

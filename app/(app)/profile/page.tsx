@@ -7,6 +7,7 @@ import {
   Home,
   LogOut,
   Mail,
+  Package,
 } from "lucide-react";
 import { AppMenuRow } from "@/components/app/app-menu-row";
 import { AppPageHeader } from "@/components/app/app-page-header";
@@ -74,8 +75,14 @@ function ProfileContent() {
         <AppMenuRow
           href="/saved"
           icon={Bookmark}
-          title="Collections"
-          description="Meals you have saved"
+          title="Saved"
+          description="Meals you have hearted"
+        />
+        <AppMenuRow
+          href="/meal-packs"
+          icon={Package}
+          title="Meal Packs"
+          description="Bundles of meals you create"
         />
       </section>
 
