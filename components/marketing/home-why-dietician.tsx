@@ -1,10 +1,4 @@
-import {
-  BarChart3,
-  Bookmark,
-  Leaf,
-  ShieldCheck,
-  Target,
-} from "lucide-react";
+import { BarChart3, Bookmark, Leaf, ShieldCheck, Target } from "lucide-react";
 import { MARKETING_COPY } from "@/lib/constants/marketing-copy";
 
 const FEATURE_ICONS = [Leaf, Target, ShieldCheck, Bookmark, BarChart3] as const;
@@ -19,7 +13,10 @@ export function HomeWhyDietician() {
         {MARKETING_COPY.features.map((feat, i) => {
           const Icon = FEATURE_ICONS[i];
           return (
-            <div key={feat.title} className="flex flex-col items-center gap-1.5 text-center">
+            <div
+              key={feat.title}
+              className="flex flex-col items-center gap-1.5 text-center"
+            >
               <span className="flex size-9 items-center justify-center rounded-xl bg-primary/8 text-primary">
                 <Icon className="size-4" strokeWidth={2} aria-hidden />
               </span>

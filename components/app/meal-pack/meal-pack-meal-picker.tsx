@@ -13,10 +13,7 @@ import { fetchDiscoverMeals } from "@/lib/api/discover";
 import { fetchFavoriteMeals } from "@/lib/api/favorites";
 import { fetchMealsByUserId } from "@/lib/api/meal";
 import { useAuthStore } from "@/lib/store/auth-store";
-import {
-  toPickableMeal,
-  type PickableMeal,
-} from "@/lib/types/meal-pack";
+import { toPickableMeal, type PickableMeal } from "@/lib/types/meal-pack";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -353,7 +350,11 @@ export function MealPackMealPicker({
       ) : null}
 
       {!loading &&
-      !(tab === "collections" && collectionsLoading && !activeCollectionSlug) ? (
+      !(
+        tab === "collections" &&
+        collectionsLoading &&
+        !activeCollectionSlug
+      ) ? (
         <>
           {filteredMeals.length === 0 && tab !== "collections" ? (
             <AppEmptyState

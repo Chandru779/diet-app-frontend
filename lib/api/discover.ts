@@ -5,13 +5,16 @@ import type {
   MealCategoriesResponse,
 } from "@/lib/types/meal-discover";
 
-function toParams(query: DiscoverQueryParams): Record<string, string | number | boolean> {
+function toParams(
+  query: DiscoverQueryParams,
+): Record<string, string | number | boolean> {
   const params: Record<string, string | number | boolean> = {};
   if (query.q) params.q = query.q;
   if (query.categories?.length) params.categories = query.categories.join(",");
   if (query.categoryGroup) params.categoryGroup = query.categoryGroup;
   if (query.mealType?.length) params.mealType = query.mealType.join(",");
-  if (query.isVegetarian !== undefined) params.isVegetarian = query.isVegetarian;
+  if (query.isVegetarian !== undefined)
+    params.isVegetarian = query.isVegetarian;
   if (query.caloriesMin != null) params.caloriesMin = query.caloriesMin;
   if (query.caloriesMax != null) params.caloriesMax = query.caloriesMax;
   if (query.proteinMin != null) params.proteinMin = query.proteinMin;

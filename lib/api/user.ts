@@ -7,7 +7,9 @@ export type UpdateProfileBody = {
   lastName?: string;
 };
 
-export async function updateProfile(body: UpdateProfileBody): Promise<AuthUser> {
+export async function updateProfile(
+  body: UpdateProfileBody,
+): Promise<AuthUser> {
   const res = await http.patch<AuthUser>("/users/me", body);
   return res.data;
 }

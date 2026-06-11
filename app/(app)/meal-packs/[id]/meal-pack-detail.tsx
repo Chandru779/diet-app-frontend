@@ -189,8 +189,7 @@ export function MealPackDetailView() {
         <div className="mb-3 flex flex-wrap items-center gap-2">
           {!pack.isOwner ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
-              <UserRound className="size-3" />
-              @{pack.owner.username}
+              <UserRound className="size-3" />@{pack.owner.username}
             </span>
           ) : null}
           <span className="inline-flex items-center gap-1 rounded-full bg-muted/40 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">

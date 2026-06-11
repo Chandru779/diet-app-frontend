@@ -36,7 +36,9 @@ export async function fetchMealsByUserId(userId: string): Promise<ApiMeal[]> {
 }
 
 /** GET /meals/user/by-username/:username — fallback when UUID is unavailable. */
-export async function fetchMealsByUsername(username: string): Promise<ApiMeal[]> {
+export async function fetchMealsByUsername(
+  username: string,
+): Promise<ApiMeal[]> {
   const res = await http.get<ApiMeal[]>(
     `/meals/user/by-username/${encodeURIComponent(username)}`,
     { headers: { "Cache-Control": "no-store" } },
@@ -44,9 +46,10 @@ export async function fetchMealsByUsername(username: string): Promise<ApiMeal[]>
   return res.data;
 }
 
-
 /** GET /meals/catalog — reference ingredients for meal builder. */
-export async function fetchMealCatalog(search?: string): Promise<MealCatalogItem[]> {
+export async function fetchMealCatalog(
+  search?: string,
+): Promise<MealCatalogItem[]> {
   const params =
     search != null && search.trim().length > 0 ? { q: search.trim() } : {};
   const res = await http.get<MealCatalogItem[]>("/meals/catalog", {
@@ -60,7 +63,9 @@ export async function fetchMealById(id: string): Promise<ApiMeal> {
   // Some backend versions accidentally return `{ data: {} }` for /meals/:id
   // (promise not awaited in controller). If we don't have an id, fall back
   // to fetching the list and selecting by id.
-  const res = await http.get<ApiMeal>(`/meals/${id}`, { headers: { "Cache-Control": "no-store" } });
+  const res = await http.get<ApiMeal>(`/meals/${id}`, {
+    headers: { "Cache-Control": "no-store" },
+  });
   const meal = res.data;
   if (!meal || typeof meal !== "object" || !("id" in meal)) {
     const list = await fetchMeals();
@@ -121,9 +126,7 @@ export type UpdateMealPayload = {
 /**
  * POST /meals — requires a Bearer token (from session cookie via `http` interceptor).
  */
-export async function createMeal(
-  payload: CreateMealPayload,
-): Promise<ApiMeal> {
+export async function createMeal(payload: CreateMealPayload): Promise<ApiMeal> {
   const res = await http.post<ApiMeal>("/meals", payload);
   return res.data;
 }

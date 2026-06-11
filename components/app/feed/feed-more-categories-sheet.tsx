@@ -2,18 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import {
-  ChevronRight,
-  Grid3X3,
-  List,
-  Search,
-  Tags,
-  X,
-} from "lucide-react";
+import { ChevronRight, Grid3X3, List, Search, Tags, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fetchMealCategories } from "@/lib/api/discover";
 import { FEED_CATEGORY_GROUP_LABELS } from "@/lib/config/feed-ui";
-import type { MealCategoryItem, MealCategoriesResponse } from "@/lib/types/meal-discover";
+import type {
+  MealCategoryItem,
+  MealCategoriesResponse,
+} from "@/lib/types/meal-discover";
 
 type ViewMode = "grid" | "chips" | "list";
 
@@ -133,7 +129,9 @@ export function FeedMoreCategoriesSheet({
       <div
         className={cn(
           "fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px] transition-opacity duration-300",
-          open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0",
+          open
+            ? "pointer-events-auto opacity-100"
+            : "pointer-events-none opacity-0",
         )}
         onClick={onClose}
         aria-hidden
@@ -153,7 +151,10 @@ export function FeedMoreCategoriesSheet({
         </div>
 
         <div className="flex shrink-0 items-center justify-between border-b border-border/40 px-5 pb-3 pt-1">
-          <h2 id="more-categories-title" className="font-heading text-lg font-bold">
+          <h2
+            id="more-categories-title"
+            className="font-heading text-lg font-bold"
+          >
             Categories
           </h2>
           <div className="flex items-center gap-1">
@@ -295,7 +296,11 @@ function CategoryGridItem({
       )}
     >
       <span className="flex size-10 items-center justify-center rounded-xl bg-muted/50 text-lg">
-        {cat.slug.includes("muscle") ? "💪" : cat.slug.includes("fat") ? "🔥" : "🍽️"}
+        {cat.slug.includes("muscle")
+          ? "💪"
+          : cat.slug.includes("fat")
+            ? "🔥"
+            : "🍽️"}
       </span>
       <span className="text-[10px] font-semibold leading-tight text-foreground">
         {cat.label}

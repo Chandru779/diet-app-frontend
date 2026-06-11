@@ -57,15 +57,18 @@ export const FEED_MEAL_TYPE_OPTIONS: {
   { value: "snack", label: "Snack", emoji: "🍎" },
 ];
 
-export const FEED_DIET_CHIPS: { id: DietChipId; label: string; slug?: string }[] =
-  [
-    { id: "vegetarian", label: "Vegetarian", slug: "vegetarian" },
-    { id: "vegan", label: "Vegan", slug: "vegan" },
-    { id: "non-veg", label: "Non-Veg" },
-    { id: "keto", label: "Keto", slug: "keto" },
-    { id: "paleo", label: "Paleo", slug: "paleo" },
-    { id: "mediterranean", label: "Mediterranean", slug: "mediterranean" },
-  ];
+export const FEED_DIET_CHIPS: {
+  id: DietChipId;
+  label: string;
+  slug?: string;
+}[] = [
+  { id: "vegetarian", label: "Vegetarian", slug: "vegetarian" },
+  { id: "vegan", label: "Vegan", slug: "vegan" },
+  { id: "non-veg", label: "Non-Veg" },
+  { id: "keto", label: "Keto", slug: "keto" },
+  { id: "paleo", label: "Paleo", slug: "paleo" },
+  { id: "mediterranean", label: "Mediterranean", slug: "mediterranean" },
+];
 
 export const FEED_PREP_TIME_OPTIONS: {
   value: PrepTimePreset;
@@ -85,7 +88,10 @@ function parseNum(value: string | null): number | undefined {
 
 function parseList(value: string | null): string[] | undefined {
   if (!value?.trim()) return undefined;
-  const items = value.split(",").map((s) => s.trim()).filter(Boolean);
+  const items = value
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
   return items.length ? items : undefined;
 }
 
@@ -125,8 +131,10 @@ export function feedAdvancedFiltersToSearchParams(
 ): URLSearchParams {
   const next = mealFeedFiltersToSearchParams(filters);
 
-  if (filters.caloriesMin != null) next.set("calMin", String(filters.caloriesMin));
-  if (filters.caloriesMax != null) next.set("calMax", String(filters.caloriesMax));
+  if (filters.caloriesMin != null)
+    next.set("calMin", String(filters.caloriesMin));
+  if (filters.caloriesMax != null)
+    next.set("calMax", String(filters.caloriesMax));
   if (filters.proteinSliderMin != null) {
     next.set("proteinSliderMin", String(filters.proteinSliderMin));
   }
@@ -137,7 +145,8 @@ export function feedAdvancedFiltersToSearchParams(
   if (filters.carbsMax != null) next.set("carbsMax", String(filters.carbsMax));
   if (filters.fatMin != null) next.set("fatMin", String(filters.fatMin));
   if (filters.fatMax != null) next.set("fatMax", String(filters.fatMax));
-  if (filters.mealTypes?.length) next.set("mealType", filters.mealTypes.join(","));
+  if (filters.mealTypes?.length)
+    next.set("mealType", filters.mealTypes.join(","));
   if (filters.dietChips?.length) next.set("diet", filters.dietChips.join(","));
   if (filters.prepTimePreset != null) {
     next.set("prepTime", String(filters.prepTimePreset));
@@ -151,7 +160,8 @@ export function feedAdvancedFiltersToSearchParams(
   if (filters.isQuick) next.set("quick", "1");
   if (filters.isBeginnerFriendly) next.set("beginner", "1");
   if (filters.isBudgetFriendly) next.set("budget", "1");
-  if (filters.categorySlugs?.length) next.set("cat", filters.categorySlugs.join(","));
+  if (filters.categorySlugs?.length)
+    next.set("cat", filters.categorySlugs.join(","));
 
   return next;
 }
@@ -163,7 +173,8 @@ export function countFeedAdvancedFilters(filters: FeedAdvancedFilters): number {
   if (filters.proteinMin != null) n += 1;
   if (filters.lightMeal) n += 1;
   if (filters.caloriesMin != null || filters.caloriesMax != null) n += 1;
-  if (filters.proteinSliderMin != null || filters.proteinSliderMax != null) n += 1;
+  if (filters.proteinSliderMin != null || filters.proteinSliderMax != null)
+    n += 1;
   if (filters.carbsMin != null || filters.carbsMax != null) n += 1;
   if (filters.fatMin != null || filters.fatMax != null) n += 1;
   if (filters.mealTypes?.length) n += 1;

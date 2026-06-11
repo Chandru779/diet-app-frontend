@@ -62,7 +62,9 @@ function ToggleRow({
     >
       <span>
         <span className="block text-sm font-semibold">{label}</span>
-        <span className="block text-xs text-muted-foreground">{description}</span>
+        <span className="block text-xs text-muted-foreground">
+          {description}
+        </span>
       </span>
       <span
         className={cn(
@@ -191,7 +193,8 @@ export function MealFilterSheet({
   const activeCount = useMemo(() => {
     let n = 0;
     if (draft.caloriesMin != null || draft.caloriesMax != null) n += 1;
-    if (draft.proteinSliderMin != null || draft.proteinSliderMax != null) n += 1;
+    if (draft.proteinSliderMin != null || draft.proteinSliderMax != null)
+      n += 1;
     if (draft.carbsMin != null || draft.carbsMax != null) n += 1;
     if (draft.fatMin != null || draft.fatMax != null) n += 1;
     if (draft.mealTypes?.length) n += draft.mealTypes.length;
@@ -373,7 +376,9 @@ export function MealFilterSheet({
                     <span className="text-xl" aria-hidden>
                       {opt.emoji}
                     </span>
-                    <span className="text-[10px] font-semibold">{opt.label}</span>
+                    <span className="text-[10px] font-semibold">
+                      {opt.label}
+                    </span>
                   </button>
                 );
               })}

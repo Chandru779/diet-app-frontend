@@ -1,11 +1,4 @@
-import {
-  Clock,
-  Drumstick,
-  Flame,
-  Leaf,
-  TrendingDown,
-  Zap,
-} from "lucide-react";
+import { Clock, Drumstick, Flame, Leaf, TrendingDown, Zap } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ApiMeal } from "@/lib/types/meal";
 import {

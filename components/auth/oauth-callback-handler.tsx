@@ -30,11 +30,7 @@ function OAuthCallbackContent() {
 
     completeGoogleAuth(flowId, clerkSessionId ?? undefined)
       .then((result) => {
-        if (
-          result.status === "needs_username" &&
-          result.token &&
-          result.user
-        ) {
+        if (result.status === "needs_username" && result.token && result.user) {
           setSession(result.user, result.token);
           setNeedsUsername(true);
           setLoading(false);
@@ -47,9 +43,7 @@ function OAuthCallbackContent() {
         }
       })
       .catch((err) => {
-        setError(
-          err instanceof Error ? err.message : "Google sign-in failed.",
-        );
+        setError(err instanceof Error ? err.message : "Google sign-in failed.");
         setLoading(false);
       });
   }, [params, router, setSession]);

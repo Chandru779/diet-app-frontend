@@ -49,7 +49,9 @@ export async function completeGoogleAuth(
   return res.data;
 }
 
-export async function setUsername(username: string): Promise<AuthSessionPayload> {
+export async function setUsername(
+  username: string,
+): Promise<AuthSessionPayload> {
   const res = await http.post<AuthSessionPayload>("/auth/username", {
     username,
   });

@@ -28,7 +28,9 @@ export function SavedList() {
       })
       .catch(() => {
         if (!cancelled) {
-          setError("Could not load collections. Make sure the backend is running.");
+          setError(
+            "Could not load collections. Make sure the backend is running.",
+          );
         }
       })
       .finally(() => {
@@ -63,7 +65,9 @@ export function SavedList() {
             className="h-12 w-12 animate-pulse text-primary/55"
             label="Loading collections"
           />
-          <p className="mt-3 text-sm text-muted-foreground">Loading saved meals…</p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Loading saved meals…
+          </p>
         </div>
       ) : null}
 

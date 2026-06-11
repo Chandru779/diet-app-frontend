@@ -58,7 +58,9 @@ function DiscoverMealCard({
           )}
         >
           {meal.proteinG}g
-          <span className="block text-[8px] font-medium opacity-80">Protein</span>
+          <span className="block text-[8px] font-medium opacity-80">
+            Protein
+          </span>
         </span>
         <span
           className={cn(
@@ -149,7 +151,6 @@ export function HomeDiscoverMeals() {
           <h2 className="font-heading text-base font-bold text-foreground">
             {MARKETING_COPY.discoverTitle}
           </h2>
-        
         </div>
         <Link
           href="/feed"

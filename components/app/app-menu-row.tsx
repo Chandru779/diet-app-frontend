@@ -52,9 +52,7 @@ export function AppMenuRow({
           <span
             className={cn(
               "mt-0.5 block text-xs",
-              isDestructive
-                ? "text-destructive/65"
-                : "text-muted-foreground",
+              isDestructive ? "text-destructive/65" : "text-muted-foreground",
             )}
           >
             {description}
@@ -73,9 +71,7 @@ export function AppMenuRow({
 
   const className = cn(
     "meal-card flex w-full items-center gap-3 rounded-2xl bg-white px-4 py-3.5 shadow-sm transition active:scale-[0.99]",
-    isDestructive
-      ? "hover:bg-destructive/5"
-      : "hover:bg-muted/20",
+    isDestructive ? "hover:bg-destructive/5" : "hover:bg-muted/20",
   );
 
   if (href) {

@@ -9,9 +9,7 @@ export type PickableMeal = {
   caloriesKcal: number;
 };
 
-export function toPickableMeal(
-  meal: ApiMeal | DiscoverMeal,
-): PickableMeal {
+export function toPickableMeal(meal: ApiMeal | DiscoverMeal): PickableMeal {
   return {
     id: meal.id,
     title: meal.title,

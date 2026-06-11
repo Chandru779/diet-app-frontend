@@ -83,7 +83,12 @@ export function MealPackStats({
             <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/80">
               {stat.label}
             </p>
-            <p className={cn("mt-0.5 text-lg font-bold tabular-nums", stat.textClass)}>
+            <p
+              className={cn(
+                "mt-0.5 text-lg font-bold tabular-nums",
+                stat.textClass,
+              )}
+            >
               {stat.value}
               <span className="ml-0.5 text-xs font-semibold">{stat.unit}</span>
             </p>
@@ -101,8 +106,8 @@ export function MealPackStats({
 
       {showPerMeal && perMeal ? (
         <p className="text-[12px] text-muted-foreground">
-          ~{Math.round(perMeal.calories)} kcal and ~{perMeal.protein}g protein per
-          meal on average
+          ~{Math.round(perMeal.calories)} kcal and ~{perMeal.protein}g protein
+          per meal on average
         </p>
       ) : null}
     </div>

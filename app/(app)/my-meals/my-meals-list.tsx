@@ -76,7 +76,9 @@ export function MyMealsList() {
             className="h-12 w-12 animate-pulse text-primary/55"
             label="Loading meals"
           />
-          <p className="mt-3 text-sm text-muted-foreground">Loading your meals…</p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Loading your meals…
+          </p>
         </div>
       ) : null}
 

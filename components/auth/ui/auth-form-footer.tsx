@@ -8,7 +8,11 @@ type AuthFormFooterProps = {
   linkLabel: string;
 };
 
-export function AuthFormFooter({ prompt, href, linkLabel }: AuthFormFooterProps) {
+export function AuthFormFooter({
+  prompt,
+  href,
+  linkLabel,
+}: AuthFormFooterProps) {
   return (
     <p className="text-center text-sm text-muted-foreground">
       {prompt}{" "}

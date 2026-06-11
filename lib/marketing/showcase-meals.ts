@@ -14,7 +14,9 @@ export type ShowcaseMealCard = {
   href: string;
 };
 
-function hasDisplayableImage(image: string | null | undefined): image is string {
+function hasDisplayableImage(
+  image: string | null | undefined,
+): image is string {
   return Boolean(image?.trim());
 }
 

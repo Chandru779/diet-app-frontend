@@ -42,7 +42,9 @@ export function hasActiveDiscoverState(state: FeedDiscoverState): boolean {
   return false;
 }
 
-export function buildDiscoverParams(state: FeedDiscoverState): DiscoverQueryParams {
+export function buildDiscoverParams(
+  state: FeedDiscoverState,
+): DiscoverQueryParams {
   const categories: string[] = [
     ...state.macroChips.map((id) => {
       const map: Record<MacroChipId, string> = {
@@ -84,9 +86,9 @@ export function buildDiscoverParams(state: FeedDiscoverState): DiscoverQueryPara
     limit: 30,
     page: 1,
     caloriesMin: state.sheetFilters.caloriesMin,
-    caloriesMax: state.sheetFilters.caloriesMax ?? (state.sheetFilters.lightMeal
-      ? MEAL_FEED_LIGHT_MAX_KCAL
-      : undefined),
+    caloriesMax:
+      state.sheetFilters.caloriesMax ??
+      (state.sheetFilters.lightMeal ? MEAL_FEED_LIGHT_MAX_KCAL : undefined),
     proteinMin:
       state.sheetFilters.proteinSliderMin ?? state.sheetFilters.proteinMin,
     proteinMax: state.sheetFilters.proteinSliderMax,

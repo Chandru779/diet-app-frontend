@@ -25,7 +25,9 @@ export function AppEmptyState({
       <div className="mb-4 flex size-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
         {icon}
       </div>
-      <p className="font-heading text-base font-bold text-foreground">{title}</p>
+      <p className="font-heading text-base font-bold text-foreground">
+        {title}
+      </p>
       <p className="mt-1.5 max-w-[16rem] text-[13px] leading-snug text-muted-foreground">
         {description}
       </p>

@@ -3,7 +3,10 @@ type FeedSectionHeaderProps = {
   onViewAll?: () => void;
 };
 
-export function FeedSectionHeader({ title, onViewAll }: FeedSectionHeaderProps) {
+export function FeedSectionHeader({
+  title,
+  onViewAll,
+}: FeedSectionHeaderProps) {
   return (
     <div className="flex items-center justify-between gap-3">
       <h2 className="m-0 min-w-0 font-heading text-lg font-bold leading-tight text-foreground">

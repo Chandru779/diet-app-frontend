@@ -67,8 +67,7 @@ export function BottomNav() {
   const homeActive = pathname === "/feed" || pathname.startsWith("/feed/");
   const myMealsActive =
     pathname === "/my-meals" || pathname.startsWith("/my-meals/");
-  const savedActive =
-    pathname === "/saved" || pathname.startsWith("/saved/");
+  const savedActive = pathname === "/saved" || pathname.startsWith("/saved/");
   const mealPacksActive =
     pathname === "/meal-packs" || pathname.startsWith("/meal-packs/");
 
@@ -79,12 +78,7 @@ export function BottomNav() {
     >
       <div className="bg-feed-header pointer-events-auto relative rounded-t-[2rem] shadow-[0_-4px_24px_rgba(0,0,0,0.06)] after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-[var(--vv-bottom-inset,0px)] after:bg-feed-header">
         <div className="mx-auto grid max-w-2xl grid-cols-5 items-center gap-0.5 px-4 py-2.5 pb-[max(0.65rem,env(safe-area-inset-bottom))]">
-          <NavTab
-            href="/feed"
-            label="Home"
-            icon={Home}
-            active={homeActive}
-          />
+          <NavTab href="/feed" label="Home" icon={Home} active={homeActive} />
           <NavTab
             href="/my-meals"
             label="My Meals"

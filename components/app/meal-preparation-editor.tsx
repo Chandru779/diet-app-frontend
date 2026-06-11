@@ -78,9 +78,7 @@ export function MealPreparationEditor({
       if (prev) {
         requestAnimationFrame(() => {
           document
-            .querySelector<HTMLInputElement>(
-              `[data-prep-step="${prev.id}"]`,
-            )
+            .querySelector<HTMLInputElement>(`[data-prep-step="${prev.id}"]`)
             ?.focus();
         });
       }
@@ -117,9 +115,7 @@ export function MealPreparationEditor({
                 onChange={(e) => updateStep(step.id, e.target.value)}
                 onKeyDown={(e) => onStepKeyDown(e, index, step.id, step.text)}
                 placeholder={
-                  index === 0
-                    ? "Add 100g paneer to bowl…"
-                    : "Next step…"
+                  index === 0 ? "Add 100g paneer to bowl…" : "Next step…"
                 }
                 className="min-w-0 flex-1 border-0 bg-transparent py-0.5 text-sm text-foreground outline-none placeholder:text-muted-foreground/45"
                 aria-label={`Step ${index + 1}`}

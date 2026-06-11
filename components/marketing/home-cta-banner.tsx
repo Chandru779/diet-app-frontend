@@ -3,7 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Heart, ShoppingBasket, Users } from "lucide-react";
-import { MARKETING_ASSETS, MARKETING_COPY } from "@/lib/constants/marketing-copy";
+import {
+  MARKETING_ASSETS,
+  MARKETING_COPY,
+} from "@/lib/constants/marketing-copy";
 
 const STATS = [
   {

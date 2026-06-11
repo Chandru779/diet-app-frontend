@@ -9,7 +9,6 @@ import {
   resolveFavorited,
   useFavoritesStore,
 } from "@/lib/store/favorites-store";
-import { useFeedStore } from "@/lib/store/feed-store";
 import { useRouter } from "next/navigation";
 
 type FavoriteButtonProps = {
@@ -24,7 +23,6 @@ export function FavoriteButton({
   className,
 }: FavoriteButtonProps) {
   const router = useRouter();
-  const bumpRefresh = useFeedStore((s) => s.bumpRefresh);
   const overrides = useFavoritesStore((s) => s.overrides);
   const setFavoritedInStore = useFavoritesStore((s) => s.setFavorited);
   const clearOverride = useFavoritesStore((s) => s.clearOverride);
@@ -51,7 +49,6 @@ export function FavoriteButton({
       } else {
         await removeFavorite(mealId);
       }
-      bumpRefresh();
     } catch {
       if (next) {
         clearOverride(mealId);
@@ -82,9 +79,7 @@ export function FavoriteButton({
       <Heart
         className={cn(
           "size-[18px] transition-colors",
-          favorited
-            ? "fill-rose-500 text-rose-500"
-            : "text-foreground/70",
+          favorited ? "fill-rose-500 text-rose-500" : "text-foreground/70",
         )}
         strokeWidth={2}
       />

@@ -62,7 +62,11 @@ export function FeedSearch({
               "relative flex size-9 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm transition hover:bg-primary/90 active:scale-[0.97]",
             )}
           >
-            <SlidersHorizontal className="size-[17px]" strokeWidth={2.25} aria-hidden />
+            <SlidersHorizontal
+              className="size-[17px]"
+              strokeWidth={2.25}
+              aria-hidden
+            />
             {activeFilterCount > 0 ? (
               <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-white text-[9px] font-bold text-primary shadow-sm ring-2 ring-primary">
                 {activeFilterCount > 9 ? "9+" : activeFilterCount}

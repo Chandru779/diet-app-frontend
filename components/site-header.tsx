@@ -9,7 +9,8 @@ import { useAuthStore } from "@/lib/store/auth-store";
 export function SiteHeader() {
   const router = useRouter();
   const isLoggedIn =
-    useAuthStore((s) => s.isLoggedIn) && Boolean(getAuthAccessTokenFromCookie());
+    useAuthStore((s) => s.isLoggedIn) &&
+    Boolean(getAuthAccessTokenFromCookie());
   const logout = useAuthStore((s) => s.logout);
 
   return (

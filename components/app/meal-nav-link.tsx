@@ -28,10 +28,7 @@ function MealLinkContent({ children }: { children: ReactNode }) {
         </>
       ) : null}
       <span
-        className={cn(
-          "contents",
-          pending && "pointer-events-none opacity-90",
-        )}
+        className={cn("contents", pending && "pointer-events-none opacity-90")}
       >
         {children}
       </span>
@@ -39,7 +36,11 @@ function MealLinkContent({ children }: { children: ReactNode }) {
   );
 }
 
-export function MealNavLink({ className, children, ...props }: MealNavLinkProps) {
+export function MealNavLink({
+  className,
+  children,
+  ...props
+}: MealNavLinkProps) {
   return (
     <Link prefetch className={cn("relative", className)} {...props}>
       <MealLinkContent>{children}</MealLinkContent>

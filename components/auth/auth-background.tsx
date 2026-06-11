@@ -8,7 +8,10 @@ import Image from "next/image";
  */
 export function AuthBackground() {
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 overflow-hidden"
+    >
       {/* Hero meals photo */}
       <Image
         src="/auth-meals-bg.png"

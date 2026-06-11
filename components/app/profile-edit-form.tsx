@@ -35,14 +35,19 @@ export function ProfileEditForm() {
       if (token) setSession(updated, token);
       setSuccess("Profile updated.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not update profile.");
+      setError(
+        err instanceof Error ? err.message : "Could not update profile.",
+      );
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4">
+    <form
+      onSubmit={onSubmit}
+      className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4"
+    >
       <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70">
         Edit profile
       </p>

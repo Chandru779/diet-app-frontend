@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { MealCoverImage } from "@/components/app/meal-cover-image";
 import { MealDetailScrollShell } from "@/components/app/meal-detail-scroll-shell";
-import { ArrowLeft, BadgeCheck, ChefHat, Package2, Utensils } from "lucide-react";
+import {
+  ArrowLeft,
+  BadgeCheck,
+  ChefHat,
+  Package2,
+  Utensils,
+} from "lucide-react";
 import { NUTRIENT_COLORS } from "@/lib/constants/nutrients";
 import { SYSTEM_USER, isSystemUser } from "@/lib/constants/system-user";
 import type { ApiMeal } from "@/lib/types/meal";
@@ -41,20 +47,20 @@ function MealDetailHero({ meal }: { meal: ApiMeal }) {
           </div>
         </div>
       )}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/65" />
 
-      <div className="absolute bottom-9 left-5 right-5">
-        <span className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/90 backdrop-blur-sm">
+      <div className="absolute inset-x-0 bottom-0 flex flex-col gap-0.5 px-6 pb-11 sm:px-8 sm:pb-12">
+        <span className="inline-flex w-fit items-center gap-0.5 rounded-full bg-black/35 px-2.5 py-px text-[9px] font-semibold uppercase tracking-wide text-white/85 backdrop-blur-sm ring-1 ring-white/10">
           {isSystemUser(meal.user.username) ? (
             <>
-              <BadgeCheck className="size-3" aria-hidden="true" />
+              <BadgeCheck className="size-2.5 shrink-0" aria-hidden="true" />
               {SYSTEM_USER.displayName}
             </>
           ) : (
             `@${meal.user.username}`
           )}
         </span>
-        <h1 className="font-heading text-2xl font-bold leading-tight text-white drop-shadow-sm sm:text-3xl">
+        <h1 className="font-heading text-[1.6rem] font-bold leading-[1.22] tracking-tight text-white drop-shadow-md sm:text-[1.85rem]">
           {meal.title}
         </h1>
       </div>
@@ -67,13 +73,13 @@ export function MealDetails({ meal }: MealDetailsProps) {
     <MealDetailScrollShell
       hero={<MealDetailHero meal={meal} />}
       backButton={
-        <div className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top,0px)+1rem)] z-[5] mx-auto flex max-w-2xl px-4">
+        <div className="pointer-events-none fixed inset-x-0 top-[calc(env(safe-area-inset-top,0px)+0.625rem)] z-[5] mx-auto flex max-w-2xl pl-3 pr-4">
           <Link
             href="/feed"
-            className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-foreground shadow-md ring-1 ring-black/5 backdrop-blur-sm transition hover:bg-white"
+            className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-foreground shadow-md ring-1 ring-black/5 backdrop-blur-sm transition hover:bg-white"
             aria-label="Back to feed"
           >
-            <ArrowLeft className="size-4" strokeWidth={2.5} />
+            <ArrowLeft className="size-3.5" strokeWidth={2.5} />
           </Link>
         </div>
       }

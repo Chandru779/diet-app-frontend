@@ -3,7 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Leaf, Drumstick } from "lucide-react";
-import { MARKETING_ASSETS, MARKETING_COPY } from "@/lib/constants/marketing-copy";
+import {
+  MARKETING_ASSETS,
+  MARKETING_COPY,
+} from "@/lib/constants/marketing-copy";
 
 const cardImageClass =
   "relative float-right ml-1 size-[4.5rem] overflow-hidden rounded-full border-2 border-white bg-white shadow-md";

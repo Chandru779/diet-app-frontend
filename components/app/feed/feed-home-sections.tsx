@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { FeedSectionHeader } from "@/components/app/feed/feed-section-header";
 import { FeedTodaysPickCard } from "@/components/app/feed/feed-todays-pick-card";
 import { FeedHighProteinCard } from "@/components/app/feed/feed-high-protein-card";
@@ -8,8 +7,7 @@ import { FeedExploreTile } from "@/components/app/feed/feed-explore-tile";
 import { FeedRecentlyViewedCard } from "@/components/app/feed/feed-recently-viewed-card";
 import { FeedCollectionBanner } from "@/components/app/feed/feed-collection-banner";
 import { FeedCreateMealBanner } from "@/components/app/feed/feed-create-meal-banner";
-import { fetchCollections } from "@/lib/api/collections";
-import type { MealCollectionSummary } from "@/lib/api/collections";
+import { useFeedStore } from "@/lib/store/feed-store";
 import type { FeedSection } from "@/lib/types/feed";
 import { cn } from "@/lib/utils";
 
@@ -26,21 +24,7 @@ export function FeedHomeSections({
   onExploreCategory,
   className,
 }: FeedHomeSectionsProps) {
-  const [collections, setCollections] = useState<MealCollectionSummary[]>([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchCollections()
-      .then((data) => {
-        if (!cancelled) setCollections(data.slice(0, 6));
-      })
-      .catch(() => {
-        if (!cancelled) setCollections([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const collections = useFeedStore((s) => s.collections);
 
   return (
     <div className={cn("flex flex-col gap-3 -mt-1.5", className)}>
@@ -56,9 +40,7 @@ export function FeedHomeSections({
             >
               <FeedSectionHeader
                 title={section.title}
-                onViewAll={
-                  onViewAll ? () => onViewAll(section.id) : undefined
-                }
+                onViewAll={onViewAll ? () => onViewAll(section.id) : undefined}
               />
               <div
                 className="-mx-4 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -87,9 +69,7 @@ export function FeedHomeSections({
             >
               <FeedSectionHeader
                 title={section.title}
-                onViewAll={
-                  onViewAll ? () => onViewAll(section.id) : undefined
-                }
+                onViewAll={onViewAll ? () => onViewAll(section.id) : undefined}
               />
               <ul className="flex flex-col gap-3" id={`section-${section.id}`}>
                 {section.items.map((meal) => (
@@ -111,9 +91,7 @@ export function FeedHomeSections({
             >
               <FeedSectionHeader
                 title={section.title}
-                onViewAll={
-                  onViewAll ? () => onViewAll(section.id) : undefined
-                }
+                onViewAll={onViewAll ? () => onViewAll(section.id) : undefined}
               />
               <div
                 className="-mx-4 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"

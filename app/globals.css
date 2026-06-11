@@ -19,18 +19,18 @@
     --popover-foreground: oklch(0.14 0.015 248);
 
     /* Brand — deep forest green */
-    --primary: oklch(0.40 0.13 152);
+    --primary: oklch(0.4 0.13 152);
     --primary-foreground: oklch(0.99 0 0);
 
     /* Neutrals */
     --secondary: oklch(0.94 0.008 80);
     --secondary-foreground: oklch(0.24 0.02 248);
     --muted: oklch(0.94 0.008 80);
-    --muted-foreground: oklch(0.50 0.02 248);
+    --muted-foreground: oklch(0.5 0.02 248);
 
     /* Accent */
     --accent: oklch(0.94 0.02 152);
-    --accent-foreground: oklch(0.30 0.10 152);
+    --accent-foreground: oklch(0.3 0.1 152);
 
     /* Semantic */
     --destructive: oklch(0.577 0.245 27.325);
@@ -38,7 +38,7 @@
     /* Chrome */
     --border: oklch(0.89 0.01 80);
     --input: oklch(0.89 0.01 80);
-    --ring: oklch(0.40 0.13 152);
+    --ring: oklch(0.4 0.13 152);
     --radius: 0.875rem;
   }
 
@@ -54,7 +54,9 @@
 
   body {
     @apply min-h-[100dvh] bg-background text-foreground antialiased;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
     font-size: 16px;
     line-height: 1.6;
   }
@@ -83,7 +85,9 @@
 
   /* Premium minimal motion: respect user preference */
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
+    *,
+    *::before,
+    *::after {
       animation-duration: 0.001ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.001ms !important;
@@ -113,7 +117,7 @@
   /* Subtle dot grid for depth */
   .bg-dot-grid {
     background-image: radial-gradient(
-      oklch(0.40 0.13 152 / 0.055) 1px,
+      oklch(0.4 0.13 152 / 0.055) 1px,
       transparent 1px
     );
     background-size: 24px 24px;
@@ -156,7 +160,7 @@
     background: var(--primary);
     color: var(--primary-foreground);
     box-shadow:
-      0 6px 20px -4px oklch(0.40 0.13 152 / 0.45),
+      0 6px 20px -4px oklch(0.4 0.13 152 / 0.45),
       0 2px 8px -2px rgb(0 0 0 / 0.12),
       inset 0 1px 0 oklch(1 0 0 / 0.12);
   }

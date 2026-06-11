@@ -13,10 +13,7 @@ type MealPackCardProps = {
 export function MealPackCard({ pack }: MealPackCardProps) {
   return (
     <div className="meal-card group relative overflow-hidden rounded-2xl bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-      <Link
-        href={`/meal-packs/${pack.id}`}
-        className="flex gap-3 p-3.5 pr-12"
-      >
+      <Link href={`/meal-packs/${pack.id}`} className="flex gap-3 p-3.5 pr-12">
         <div className="relative size-[76px] shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-primary/10 to-emerald-50">
           {pack.coverImage ? (
             <MealCoverImage

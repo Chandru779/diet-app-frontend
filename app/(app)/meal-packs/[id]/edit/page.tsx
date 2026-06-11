@@ -9,7 +9,9 @@ type EditMealPackPageProps = {
   params: Promise<{ id: string }>;
 };
 
-export default async function EditMealPackPage({ params }: EditMealPackPageProps) {
+export default async function EditMealPackPage({
+  params,
+}: EditMealPackPageProps) {
   const { id } = await params;
 
   return (

@@ -149,7 +149,9 @@ function SectionCard({
         <div className="min-w-0">
           <h3 className="text-sm font-semibold text-foreground">{title}</h3>
           {description ? (
-            <p className="mt-0.5 text-[11px] text-muted-foreground">{description}</p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              {description}
+            </p>
           ) : null}
         </div>
         {action}
@@ -279,7 +281,9 @@ export function CreateMealSheet() {
   }, [rows, catalog]);
 
   const hasValidRows = rows.some((r) => rowIsNutritionValid(catalog, r));
-  const filledIngredientCount = rows.filter((r) => r.ingredientKey.trim()).length;
+  const filledIngredientCount = rows.filter((r) =>
+    r.ingredientKey.trim(),
+  ).length;
   const showPreparation = hasValidRows || filledIngredientCount >= 2;
 
   const derivedIsVegetarian = useMemo(() => {
@@ -330,7 +334,10 @@ export function CreateMealSheet() {
       }),
     );
 
-  const setRowQuantityUnit = (id: string, quantityUnit: "grams" | "count" | "ml") =>
+  const setRowQuantityUnit = (
+    id: string,
+    quantityUnit: "grams" | "count" | "ml",
+  ) =>
     setRows((prev) =>
       prev.map((r) => {
         if (r.id !== id) return r;
@@ -346,9 +353,7 @@ export function CreateMealSheet() {
     );
 
   const setRowQty = (id: string, quantity: string) =>
-    setRows((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, quantity } : r)),
-    );
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, quantity } : r)));
 
   // ── Sheet lifecycle ────────────────────────────────────────────────────────
 
@@ -456,11 +461,12 @@ export function CreateMealSheet() {
 
   return (
     <>
-
       {/* ── Backdrop ── */}
       <div
         className={`fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px] transition-opacity duration-300 ${
-          isOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+          isOpen
+            ? "pointer-events-auto opacity-100"
+            : "pointer-events-none opacity-0"
         }`}
         onClick={close}
         aria-hidden
@@ -530,7 +536,9 @@ export function CreateMealSheet() {
                   key={label}
                   className={`rounded-lg border px-1.5 py-2 text-center ${nc.bgClass} ${nc.borderClass}`}
                 >
-                  <div className={`text-xs font-bold tabular-nums ${nc.textClass}`}>
+                  <div
+                    className={`text-xs font-bold tabular-nums ${nc.textClass}`}
+                  >
                     {value}
                   </div>
                   <div className="mt-0.5 text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
@@ -564,7 +572,9 @@ export function CreateMealSheet() {
                 <button
                   type="button"
                   onClick={() => mealImageInputRef.current?.click()}
-                  aria-label={mealImagePreviewUrl ? "Change meal photo" : "Add meal photo"}
+                  aria-label={
+                    mealImagePreviewUrl ? "Change meal photo" : "Add meal photo"
+                  }
                   className={cn(
                     "flex size-9 items-center justify-center overflow-hidden rounded-xl border transition active:scale-[0.97]",
                     mealImagePreviewUrl
@@ -676,7 +686,9 @@ export function CreateMealSheet() {
                   <span
                     className={cn(
                       "font-semibold",
-                      derivedIsVegetarian ? "text-emerald-700" : "text-orange-700",
+                      derivedIsVegetarian
+                        ? "text-emerald-700"
+                        : "text-orange-700",
                     )}
                   >
                     {derivedIsVegetarian ? "Vegetarian" : "Non-veg"}
@@ -689,7 +701,9 @@ export function CreateMealSheet() {
               ) : null}
 
               <div>
-                <p className="mb-1.5 text-xs font-semibold text-foreground">Prep time</p>
+                <p className="mb-1.5 text-xs font-semibold text-foreground">
+                  Prep time
+                </p>
                 <div className="flex flex-wrap gap-1.5">
                   {FEED_PREP_TIME_OPTIONS.map((opt) => {
                     const selected = prepTimePreset === opt.value;
@@ -763,9 +777,7 @@ export function CreateMealSheet() {
                     canRemove={rows.length > 1}
                     onIngredientChange={(key) => setRowIngredient(row.id, key)}
                     onQtyChange={(qty) => setRowQty(row.id, qty)}
-                    onQuantityUnitChange={(u) =>
-                      setRowQuantityUnit(row.id, u)
-                    }
+                    onQuantityUnitChange={(u) => setRowQuantityUnit(row.id, u)}
                     onRemove={() => removeRow(row.id)}
                   />
                 ))}
@@ -774,7 +786,9 @@ export function CreateMealSheet() {
               <button
                 type="button"
                 onClick={addRow}
-                disabled={catalogStatus === "idle" || catalogStatus === "loading"}
+                disabled={
+                  catalogStatus === "idle" || catalogStatus === "loading"
+                }
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-2.5 text-sm font-medium text-muted-foreground transition hover:border-primary/50 hover:bg-primary/5 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Plus className="size-4" />
@@ -798,7 +812,10 @@ export function CreateMealSheet() {
               title="Preparation"
               description="Optional — add step-by-step instructions"
             >
-              <MealPreparationEditor steps={prepSteps} onChange={setPrepSteps} />
+              <MealPreparationEditor
+                steps={prepSteps}
+                onChange={setPrepSteps}
+              />
             </SectionCard>
           ) : null}
 
@@ -961,14 +978,12 @@ function IngredientCatalogCombobox({
   const options: MealCatalogItem[] = showRemote ? remoteList : [...allCatalog];
 
   const listLoading =
-    bootstrapStatus === "loading" ||
-    (showRemote && searchStatus === "loading");
+    bootstrapStatus === "loading" || (showRemote && searchStatus === "loading");
   const listError =
     bootstrapStatus === "error" || (showRemote && searchStatus === "error");
   const searchInputBusy = showRemote && searchStatus === "loading";
 
-  const triggerDisabled =
-    bootstrapStatus !== "ok" || allCatalog.length === 0;
+  const triggerDisabled = bootstrapStatus !== "ok" || allCatalog.length === 0;
 
   const dropdown =
     open && !triggerDisabled && panelBox
@@ -1228,31 +1243,28 @@ function IngredientRowWidget({
                     : "Quick gram amounts"
               }
             >
-              {(
-                row.quantityUnit === "count"
-                  ? QUICK_COUNT
-                  : row.quantityUnit === "ml"
-                    ? QUICK_ML
-                    : QUICK_GRAMS
-              ).map(
-                (n) => {
-                  const active = row.quantity === String(n);
-                  return (
-                    <button
-                      key={n}
-                      type="button"
-                      onClick={() => onQtyChange(String(n))}
-                      className={`min-w-0 flex-1 rounded-md px-1 text-[11px] font-semibold tabular-nums transition ${
-                        active
-                          ? "bg-background text-primary shadow-sm ring-1 ring-primary/25"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {n}
-                    </button>
-                  );
-                },
-              )}
+              {(row.quantityUnit === "count"
+                ? QUICK_COUNT
+                : row.quantityUnit === "ml"
+                  ? QUICK_ML
+                  : QUICK_GRAMS
+              ).map((n) => {
+                const active = row.quantity === String(n);
+                return (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => onQtyChange(String(n))}
+                    className={`min-w-0 flex-1 rounded-md px-1 text-[11px] font-semibold tabular-nums transition ${
+                      active
+                        ? "bg-background text-primary shadow-sm ring-1 ring-primary/25"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {n}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

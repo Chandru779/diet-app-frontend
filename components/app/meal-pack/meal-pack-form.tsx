@@ -13,10 +13,7 @@ import {
   updateMealPack,
 } from "@/lib/api/meal-packs";
 import { useFeedStore } from "@/lib/store/feed-store";
-import {
-  toPickableMeal,
-  type PickableMeal,
-} from "@/lib/types/meal-pack";
+import { toPickableMeal, type PickableMeal } from "@/lib/types/meal-pack";
 
 type MealPackFormProps = {
   packId?: string;
@@ -120,7 +117,9 @@ export function MealPackForm({ packId }: MealPackFormProps) {
 
       router.push("/meal-packs");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save meal pack.");
+      setError(
+        err instanceof Error ? err.message : "Could not save meal pack.",
+      );
     } finally {
       setSaving(false);
     }
@@ -193,9 +192,7 @@ export function MealPackForm({ packId }: MealPackFormProps) {
         onToggleExpanded={() => setExpanded((v) => !v)}
         onRemove={removeSelected}
         onSave={() => void save(false)}
-        onSaveAndCreateAnother={
-          isEdit ? undefined : () => void save(true)
-        }
+        onSaveAndCreateAnother={isEdit ? undefined : () => void save(true)}
         saving={saving}
         saveLabel={isEdit ? "Save changes" : "Save pack"}
         showSaveAndCreate={!isEdit}

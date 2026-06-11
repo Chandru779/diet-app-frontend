@@ -17,7 +17,9 @@ export type DisplayName = {
   initial: string;
 };
 
-export function deriveDisplayName(username: string | null | undefined): DisplayName {
+export function deriveDisplayName(
+  username: string | null | undefined,
+): DisplayName {
   if (!username) {
     return { firstName: "Guest", lastName: null, initial: "?" };
   }

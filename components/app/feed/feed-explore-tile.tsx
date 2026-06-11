@@ -10,7 +10,11 @@ type FeedExploreTileProps = {
   onSelect?: (slug: string) => void;
 };
 
-export function FeedExploreTile({ slug, label, onSelect }: FeedExploreTileProps) {
+export function FeedExploreTile({
+  slug,
+  label,
+  onSelect,
+}: FeedExploreTileProps) {
   const style = EXPLORE_TILE_STYLES[slug] ?? {
     bg: "bg-muted",
     accent: "text-foreground",

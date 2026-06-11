@@ -3,7 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
-import { MARKETING_ASSETS, MARKETING_COPY } from "@/lib/constants/marketing-copy";
+import {
+  MARKETING_ASSETS,
+  MARKETING_COPY,
+} from "@/lib/constants/marketing-copy";
 
 export function HomeHero() {
   return (

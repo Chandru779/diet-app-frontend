@@ -29,7 +29,12 @@ export type PrimaryCategory = {
 
 export const FEED_PRIMARY_CATEGORIES: PrimaryCategory[] = [
   { id: "popular", label: "Popular", slug: "popular", icon: Flame },
-  { id: "high-protein", label: "High Protein", slug: "high-protein", icon: BicepsFlexed },
+  {
+    id: "high-protein",
+    label: "High Protein",
+    slug: "high-protein",
+    icon: BicepsFlexed,
+  },
   {
     id: "under-500-kcal",
     label: "Under 500 kcal",

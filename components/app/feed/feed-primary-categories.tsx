@@ -11,10 +11,7 @@ type FeedPrimaryCategoriesProps = {
   onSelect: (id: PrimaryCategoryId) => void;
 };
 
-function categoryIconClass(
-  id: PrimaryCategoryId,
-  isActive: boolean,
-): string {
+function categoryIconClass(id: PrimaryCategoryId, isActive: boolean): string {
   if (isActive) return "text-primary-foreground";
   if (id === "quick-meals") return "text-amber-500";
   return "text-foreground/80";
@@ -68,7 +65,10 @@ export function FeedPrimaryCategories({
               )}
             >
               <Icon
-                className={cn("size-[18px] shrink-0", categoryIconClass(cat.id, isActive))}
+                className={cn(
+                  "size-[18px] shrink-0",
+                  categoryIconClass(cat.id, isActive),
+                )}
                 strokeWidth={2}
                 aria-hidden
               />

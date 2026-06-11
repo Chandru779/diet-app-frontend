@@ -2,7 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { CalendarDays, Eye, Layers, Package, Plus, Sparkles } from "lucide-react";
+import {
+  CalendarDays,
+  Eye,
+  Layers,
+  Package,
+  Plus,
+  Sparkles,
+} from "lucide-react";
 import { AppEmptyState } from "@/components/app/app-empty-state";
 import { AppPrimaryButton } from "@/components/app/app-primary-button";
 import { MealLoadingIllustration } from "@/components/app/meal-loading-illustration";
@@ -13,7 +20,11 @@ import { cn } from "@/lib/utils";
 
 type PackSort = "date" | "views";
 
-const PACK_SORT_OPTIONS: { value: PackSort; label: string; icon: typeof CalendarDays }[] = [
+const PACK_SORT_OPTIONS: {
+  value: PackSort;
+  label: string;
+  icon: typeof CalendarDays;
+}[] = [
   { value: "date", label: "Date", icon: CalendarDays },
   { value: "views", label: "Views", icon: Eye },
 ];
@@ -59,7 +70,9 @@ export function MealPacksList() {
       })
       .catch(() => {
         if (!cancelled) {
-          setError("Could not load meal packs. Make sure the backend is running.");
+          setError(
+            "Could not load meal packs. Make sure the backend is running.",
+          );
         }
       })
       .finally(() => {
@@ -141,7 +154,9 @@ export function MealPacksList() {
             className="h-12 w-12 animate-pulse text-primary/55"
             label="Loading meal packs"
           />
-          <p className="mt-3 text-sm text-muted-foreground">Loading your packs…</p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Loading your packs…
+          </p>
         </div>
       ) : null}
 
@@ -171,7 +186,10 @@ export function MealPacksList() {
         <>
           <div className="flex items-center justify-between gap-3 px-0.5">
             <div className="flex items-center gap-2">
-              <Layers className="size-3.5 text-muted-foreground" strokeWidth={2.25} />
+              <Layers
+                className="size-3.5 text-muted-foreground"
+                strokeWidth={2.25}
+              />
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground/80">
                 Your packs
               </p>

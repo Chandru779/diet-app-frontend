@@ -21,7 +21,11 @@ function RouteChangeIndicatorInner() {
       if (!anchor || anchor.getAttribute("target") === "_blank") return;
 
       const rawHref = anchor.getAttribute("href");
-      if (!rawHref || rawHref.startsWith("#") || rawHref.startsWith("mailto:")) {
+      if (
+        !rawHref ||
+        rawHref.startsWith("#") ||
+        rawHref.startsWith("mailto:")
+      ) {
         return;
       }
 

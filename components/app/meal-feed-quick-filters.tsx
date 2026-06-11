@@ -43,7 +43,9 @@ export function MealFeedQuickFilters({
                 active ? chip.activeClass : chip.inactiveClass,
               )}
             >
-              {Icon ? <Icon className="size-3.5" strokeWidth={2.25} aria-hidden /> : null}
+              {Icon ? (
+                <Icon className="size-3.5" strokeWidth={2.25} aria-hidden />
+              ) : null}
               {chip.label}
             </button>
           );
