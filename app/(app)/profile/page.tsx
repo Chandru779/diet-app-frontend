@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { AppMenuRow } from "@/components/app/app-menu-row";
 import { AppPageHeader } from "@/components/app/app-page-header";
+import { InstallAppBanner } from "@/components/app/install-app-banner";
 import { ProfileEditForm } from "@/components/app/profile-edit-form";
 import { RequireAuth } from "@/components/app/require-auth";
 import { deriveDisplayName } from "@/lib/auth/display-name";
@@ -53,6 +54,8 @@ function ProfileContent() {
           </div>
         </div>
       </AppPageHeader>
+
+      <InstallAppBanner />
 
       <ProfileEditForm />
 

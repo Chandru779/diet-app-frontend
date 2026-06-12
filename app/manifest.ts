@@ -3,10 +3,12 @@ import { BRAND, brandColors } from "@/lib/constants/branding";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
+    id: "/",
     name: BRAND.name,
     short_name: BRAND.name,
     description: BRAND.tagline,
     start_url: "/feed",
+    scope: "/",
     display: "standalone",
     orientation: "portrait",
     background_color: brandColors.background,
@@ -19,13 +21,13 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: "any",
       },
       {
-        src: BRAND.logoSrc,
+        src: "/icons/192",
         sizes: "192x192",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: BRAND.logoSrc,
+        src: "/icons/512",
         sizes: "512x512",
         type: "image/png",
         purpose: "any",
