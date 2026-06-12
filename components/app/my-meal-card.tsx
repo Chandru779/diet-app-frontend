@@ -11,10 +11,9 @@ import type { ApiMeal } from "@/lib/types/meal";
 
 type MyMealCardProps = {
   meal: ApiMeal;
-  onDeleted: () => void;
 };
 
-export function MyMealCard({ meal, onDeleted }: MyMealCardProps) {
+export function MyMealCard({ meal }: MyMealCardProps) {
   const queryClient = useQueryClient();
   const openEditSheet = useFeedStore((s) => s.openEditSheet);
   const bumpRefresh = useFeedStore((s) => s.bumpRefresh);
@@ -48,7 +47,6 @@ export function MyMealCard({ meal, onDeleted }: MyMealCardProps) {
       await deleteMeal(meal.id);
       await invalidateMyMeals(queryClient);
       bumpRefresh();
-      onDeleted();
     } catch (err) {
       window.alert(
         err instanceof Error ? err.message : "Could not delete meal.",

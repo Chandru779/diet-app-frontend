@@ -5,7 +5,6 @@ import {
 } from "@tanstack/react-query";
 import { HomeLanding } from "@/components/marketing/home-landing";
 import { fetchHomeMealsServer } from "@/lib/api/home-meals";
-import { HOME_PAGE_REVALIDATE_SEC } from "@/lib/query/constants";
 import { homeMealsQueryKey } from "@/lib/query/query-keys";
 
 export const metadata = {
@@ -15,7 +14,7 @@ export const metadata = {
 };
 
 /** ISR: static shell revalidates every 5 minutes — fits mostly-static marketing content. */
-export const revalidate = HOME_PAGE_REVALIDATE_SEC;
+export const revalidate = 300;
 
 export default async function Home() {
   const queryClient = new QueryClient();

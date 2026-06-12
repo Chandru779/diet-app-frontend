@@ -95,12 +95,7 @@ export function MyMealsList() {
           <ul className="flex flex-col gap-3">
             {meals.map((meal) => (
               <li key={meal.id}>
-                <MyMealCard
-                  meal={meal}
-                  onDeleted={() =>
-                    setMeals((prev) => prev.filter((m) => m.id !== meal.id))
-                  }
-                />
+                <MyMealCard meal={meal} />
               </li>
             ))}
           </ul>

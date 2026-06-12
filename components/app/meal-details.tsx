@@ -16,10 +16,16 @@ type MealDetailsProps = {
   meal: ApiMeal;
 };
 
-function formatQty(quantity: number, quantityUnit: "grams" | "count"): string {
+function formatQty(
+  quantity: number,
+  quantityUnit: "grams" | "count" | "ml",
+): string {
   if (quantityUnit === "count") {
     const n = quantity % 1 === 0 ? String(quantity) : quantity.toFixed(1);
     return `${n}×`;
+  }
+  if (quantityUnit === "ml") {
+    return `${quantity} ml`;
   }
   return `${quantity} g`;
 }
