@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   CalendarDays,
@@ -14,8 +14,8 @@ import { AppEmptyState } from "@/components/app/app-empty-state";
 import { AppPrimaryButton } from "@/components/app/app-primary-button";
 import { MealLoadingIllustration } from "@/components/app/meal-loading-illustration";
 import { MealPackCard } from "@/components/app/meal-pack/meal-pack-card";
-import { fetchMealPacks, type MealPackSummary } from "@/lib/api/meal-packs";
-import { useFeedStore } from "@/lib/store/feed-store";
+import type { MealPackSummary } from "@/lib/api/meal-packs";
+import { useMealPacks } from "@/lib/hooks/use-meal-packs";
 import { cn } from "@/lib/utils";
 
 type PackSort = "date" | "views";
@@ -53,36 +53,11 @@ function sortPacks(packs: MealPackSummary[], sort: PackSort) {
 }
 
 export function MealPacksList() {
-  const refreshKey = useFeedStore((s) => s.refreshKey);
-  const [packs, setPacks] = useState<MealPackSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: packs = [], isPending: loading, isError } = useMealPacks();
+  const error = isError
+    ? "Could not load meal packs. Make sure the backend is running."
+    : null;
   const [sort, setSort] = useState<PackSort>("date");
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-
-    fetchMealPacks()
-      .then((rows) => {
-        if (!cancelled) setPacks(rows);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setError(
-            "Could not load meal packs. Make sure the backend is running.",
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshKey]);
 
   const count = packs.length;
   const totals = useMemo(() => aggregatePacks(packs), [packs]);

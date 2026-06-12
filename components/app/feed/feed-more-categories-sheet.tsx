@@ -2,16 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronRight, Grid3X3, List, Search, Tags, X } from "lucide-react";
+import { Grid3X3, Tags, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { fetchMealCategories } from "@/lib/api/discover";
+import { useMealCategories } from "@/lib/hooks/use-meal-categories";
 import { FEED_CATEGORY_GROUP_LABELS } from "@/lib/config/feed-ui";
 import type {
   MealCategoryItem,
   MealCategoriesResponse,
 } from "@/lib/types/meal-discover";
 
-type ViewMode = "grid" | "chips" | "list";
+type ViewMode = "chips" | "grid";
 
 type FeedMoreCategoriesSheetProps = {
   open: boolean;
@@ -19,13 +19,6 @@ type FeedMoreCategoriesSheetProps = {
   selectedSlugs: string[];
   onApply: (slugs: string[]) => void;
   onOpenFilters?: () => void;
-};
-
-const GROUP_ICON: Record<string, string> = {
-  goal: "🎯",
-  dietary: "🥗",
-  lifestyle: "✨",
-  health_focus: "💚",
 };
 
 export function FeedMoreCategoriesSheet({
@@ -36,36 +29,15 @@ export function FeedMoreCategoriesSheet({
   onOpenFilters,
 }: FeedMoreCategoriesSheetProps) {
   const [mounted, setMounted] = useState(false);
-  const [view, setView] = useState<ViewMode>("grid");
+  const [view, setView] = useState<ViewMode>("chips");
   const [draft, setDraft] = useState<string[]>([]);
-  const [search, setSearch] = useState("");
-  const [groups, setGroups] = useState<MealCategoriesResponse>([]);
-  const [loading, setLoading] = useState(false);
+  const { data: groups = [], isPending: loading } = useMealCategories();
 
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (open) setDraft(selectedSlugs);
   }, [open, selectedSlugs]);
-
-  useEffect(() => {
-    if (!open) return;
-    let cancelled = false;
-    setLoading(true);
-    fetchMealCategories()
-      .then((data) => {
-        if (!cancelled) setGroups(data);
-      })
-      .catch(() => {
-        if (!cancelled) setGroups([]);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -95,21 +67,6 @@ export function FeedMoreCategoriesSheet({
       ),
     [groups],
   );
-
-  const filteredGroups = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return exploreGroups;
-    return exploreGroups
-      .map((g) => ({
-        ...g,
-        categories: g.categories.filter(
-          (c) =>
-            c.label.toLowerCase().includes(q) ||
-            c.slug.toLowerCase().includes(q),
-        ),
-      }))
-      .filter((g) => g.categories.length > 0);
-  }, [exploreGroups, search]);
 
   const toggleSlug = useCallback((slug: string) => {
     setDraft((prev) =>
@@ -160,9 +117,8 @@ export function FeedMoreCategoriesSheet({
           <div className="flex items-center gap-1">
             {(
               [
-                { id: "grid" as const, icon: Grid3X3, label: "Grid" },
                 { id: "chips" as const, icon: Tags, label: "Chips" },
-                { id: "list" as const, icon: List, label: "List" },
+                { id: "grid" as const, icon: Grid3X3, label: "Grid" },
               ] as const
             ).map(({ id, icon: Icon, label }) => (
               <button
@@ -192,31 +148,11 @@ export function FeedMoreCategoriesSheet({
           </div>
         </div>
 
-        {view === "list" ? (
-          <div className="shrink-0 px-5 pt-3">
-            <div className="flex items-center gap-2 rounded-2xl border border-border/40 bg-muted/30 px-3.5 py-2.5">
-              <Search className="size-4 shrink-0 text-muted-foreground" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search categories…"
-                className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
-              />
-            </div>
-          </div>
-        ) : null}
-
         <div className="flex-1 overflow-y-auto px-5 py-4">
           {loading ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
               Loading categories…
             </p>
-          ) : view === "grid" ? (
-            <CategoryGrid
-              groups={exploreGroups}
-              selected={draft}
-              onToggle={toggleSlug}
-            />
           ) : view === "chips" ? (
             <CategoryChips
               groups={exploreGroups}
@@ -225,8 +161,8 @@ export function FeedMoreCategoriesSheet({
               onOpenFilters={onOpenFilters}
             />
           ) : (
-            <CategoryList
-              groups={filteredGroups}
+            <CategoryGrid
+              groups={exploreGroups}
               selected={draft}
               onToggle={toggleSlug}
             />
@@ -359,53 +295,6 @@ function CategoryChips({
           View all filters →
         </button>
       ) : null}
-    </div>
-  );
-}
-
-function CategoryList({
-  groups,
-  selected,
-  onToggle,
-}: {
-  groups: MealCategoriesResponse;
-  selected: string[];
-  onToggle: (slug: string) => void;
-}) {
-  return (
-    <div className="space-y-4">
-      {groups.map((group) => (
-        <section key={group.group}>
-          <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-            {FEED_CATEGORY_GROUP_LABELS[group.group] ?? group.group}
-          </h3>
-          <ul className="divide-y divide-border/30 overflow-hidden rounded-2xl border border-border/40 bg-white">
-            {group.categories.map((cat) => {
-              const active = selected.includes(cat.slug);
-              return (
-                <li key={cat.slug}>
-                  <button
-                    type="button"
-                    onClick={() => onToggle(cat.slug)}
-                    className={cn(
-                      "flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-muted/30",
-                      active && "bg-primary/5",
-                    )}
-                  >
-                    <span className="text-lg" aria-hidden>
-                      {GROUP_ICON[group.group] ?? "🍽️"}
-                    </span>
-                    <span className="min-w-0 flex-1 text-sm font-semibold">
-                      {cat.label}
-                    </span>
-                    <ChevronRight className="size-4 shrink-0 text-muted-foreground/50" />
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      ))}
     </div>
   );
 }

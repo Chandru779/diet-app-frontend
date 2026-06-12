@@ -1,46 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Bookmark, Compass } from "lucide-react";
 import Link from "next/link";
 import { AppEmptyState } from "@/components/app/app-empty-state";
 import { AppPageHeader } from "@/components/app/app-page-header";
 import { FeedPostCard } from "@/components/app/feed-post-card";
 import { MealLoadingIllustration } from "@/components/app/meal-loading-illustration";
-import { fetchFavoriteMeals } from "@/lib/api/favorites";
-import { useFeedStore } from "@/lib/store/feed-store";
-import type { ApiMeal } from "@/lib/types/meal";
+import { useSavedMeals } from "@/lib/hooks/use-saved-meals";
 
 export function SavedList() {
-  const refreshKey = useFeedStore((s) => s.refreshKey);
-  const [meals, setMeals] = useState<ApiMeal[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-
-    fetchFavoriteMeals()
-      .then((rows) => {
-        if (!cancelled) setMeals(rows);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setError(
-            "Could not load collections. Make sure the backend is running.",
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshKey]);
+  const { data: meals = [], isPending: loading, isError } = useSavedMeals();
+  const error = isError
+    ? "Could not load collections. Make sure the backend is running."
+    : null;
 
   const listEmpty = !loading && !error && meals.length === 0;
   const count = meals.length;

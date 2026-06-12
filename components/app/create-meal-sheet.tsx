@@ -21,6 +21,8 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { invalidateMyMeals } from "@/lib/query/invalidate";
 import { useFeedStore } from "@/lib/store/feed-store";
 import {
   FEED_MEAL_TYPE_OPTIONS,
@@ -34,7 +36,7 @@ import {
   type MealCatalogItem,
 } from "@/lib/types/meal-catalog";
 import type { MealType } from "@/lib/types/meal";
-import { createMeal, fetchMealCatalog } from "@/lib/api/meal";
+import { createMeal, fetchMealCatalog, updateMeal } from "@/lib/api/meal";
 import {
   buildPreparationStepsPayload,
   MealPreparationEditor,
@@ -164,9 +166,13 @@ function SectionCard({
 // ── Main component ───────────────────────────────────────────────────────────
 
 export function CreateMealSheet() {
+  const queryClient = useQueryClient();
   const bumpRefresh = useFeedStore((s) => s.bumpRefresh);
   const isOpen = useFeedStore((s) => s.isCreateSheetOpen);
+  const editingMeal = useFeedStore((s) => s.editingMeal);
   const closeStoreSheet = useFeedStore((s) => s.closeCreateSheet);
+  const isEditMode = editingMeal != null;
+  const hydratedMealIdRef = useRef<string | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [rows, setRows] = useState<IngredientRow[]>([
@@ -179,6 +185,7 @@ export function CreateMealSheet() {
   const [mealImagePreviewUrl, setMealImagePreviewUrl] = useState<string | null>(
     null,
   );
+  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
   const mealImageInputRef = useRef<HTMLInputElement>(null);
   /** Full catalog (GET /meals/catalog with no query) — used for resolution & macro math. */
   const [catalog, setCatalog] = useState<MealCatalogItem[]>([]);
@@ -237,6 +244,58 @@ export function CreateMealSheet() {
       cancelled = true;
     };
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      hydratedMealIdRef.current = null;
+      return;
+    }
+    if (!editingMeal || catalogStatus !== "ok") return;
+    if (hydratedMealIdRef.current === editingMeal.id) return;
+
+    hydratedMealIdRef.current = editingMeal.id;
+    setTitle(editingMeal.title);
+    setDescription(editingMeal.description ?? "");
+    setExistingImageUrl(editingMeal.image);
+    setMealImageFile(null);
+    setMealType(editingMeal.mealType);
+    setIsQuick(editingMeal.isQuick ?? false);
+    setIsBeginnerFriendly(editingMeal.isBeginnerFriendly ?? false);
+    setIsBudgetFriendly(editingMeal.isBudgetFriendly ?? false);
+    setPrepTimePreset(null);
+    setPrepSteps(
+      editingMeal.preparationSteps?.map((step) => ({
+        id: uid(),
+        text: step.text,
+      })) ?? [],
+    );
+    setRows(
+      editingMeal.ingredients.length > 0
+        ? editingMeal.ingredients.map((ingredient) => ({
+            id: uid(),
+            ingredientKey:
+              catalog.find((item) => item.id === ingredient.mealCatalogId)
+                ?.key ?? "",
+            quantity: String(ingredient.quantity),
+            quantityUnit:
+              ingredient.quantityUnit === "count"
+                ? "count"
+                : ingredient.quantityUnit === "ml"
+                  ? "ml"
+                  : "grams",
+          }))
+        : [
+            {
+              id: uid(),
+              ingredientKey: "",
+              quantity: "100",
+              quantityUnit: "grams" as const,
+            },
+          ],
+    );
+    setError(null);
+    setSuccess(false);
+  }, [isOpen, editingMeal, catalogStatus, catalog]);
 
   // ── Derived state ──────────────────────────────────────────────────────────
 
@@ -364,6 +423,7 @@ export function CreateMealSheet() {
       { id: uid(), ingredientKey: "", quantity: "100", quantityUnit: "grams" },
     ]);
     setMealImageFile(null);
+    setExistingImageUrl(null);
     setPrepSteps([]);
     setMealType(null);
     setPrepTimePreset(null);
@@ -402,7 +462,7 @@ export function CreateMealSheet() {
 
     const validRows = rows.filter((r) => rowIsNutritionValid(catalog, r));
 
-    let image: string | undefined;
+    let image: string | null | undefined;
     if (mealImageFile) {
       try {
         image = await uploadMealImage(mealImageFile);
@@ -415,6 +475,8 @@ export function CreateMealSheet() {
         setSubmitting(false);
         return;
       }
+    } else if (isEditMode && editingMeal?.image && !existingImageUrl) {
+      image = null;
     }
 
     const preparationSteps = buildPreparationStepsPayload(prepSteps);
@@ -432,7 +494,7 @@ export function CreateMealSheet() {
       isQuick: isQuick || prepTimePreset === 15,
       isBeginnerFriendly,
       isBudgetFriendly,
-      ...(image ? { image } : {}),
+      ...(image !== undefined ? { image } : {}),
       ...(preparationSteps ? { preparationSteps } : {}),
       ingredients: validRows.map((row) => ({
         catalogItemKey: row.ingredientKey,
@@ -442,15 +504,22 @@ export function CreateMealSheet() {
     };
 
     try {
-      await createMeal(payload);
+      if (isEditMode && editingMeal) {
+        await updateMeal(editingMeal.id, payload);
+      } else {
+        await createMeal(payload);
+      }
       setSuccess(true);
+      await invalidateMyMeals(queryClient);
       bumpRefresh();
       setTimeout(close, 900);
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : "Failed to create meal. Please try again.",
+          : isEditMode
+            ? "Failed to save meal. Please try again."
+            : "Failed to create meal. Please try again.",
       );
     } finally {
       setSubmitting(false);
@@ -489,9 +558,13 @@ export function CreateMealSheet() {
                 <Salad className="size-5" strokeWidth={1.75} />
               </div>
               <div className="min-w-0">
-                <h2 className="font-heading text-lg font-bold">Create Meal</h2>
+                <h2 className="font-heading text-lg font-bold">
+                  {isEditMode ? "Edit Meal" : "Create Meal"}
+                </h2>
                 <p className="text-xs text-muted-foreground">
-                  Share your recipe with the community feed
+                  {isEditMode
+                    ? "Update your recipe and macros"
+                    : "Share your recipe with the community feed"}
                 </p>
               </div>
             </div>
@@ -573,19 +646,21 @@ export function CreateMealSheet() {
                   type="button"
                   onClick={() => mealImageInputRef.current?.click()}
                   aria-label={
-                    mealImagePreviewUrl ? "Change meal photo" : "Add meal photo"
+                    mealImagePreviewUrl || existingImageUrl
+                      ? "Change meal photo"
+                      : "Add meal photo"
                   }
                   className={cn(
                     "flex size-9 items-center justify-center overflow-hidden rounded-xl border transition active:scale-[0.97]",
-                    mealImagePreviewUrl
+                    mealImagePreviewUrl || existingImageUrl
                       ? "border-primary/30 bg-white"
                       : "border-border/60 bg-white text-muted-foreground hover:border-primary/40 hover:text-primary",
                   )}
                 >
-                  {mealImagePreviewUrl ? (
-                    /* eslint-disable-next-line @next/next/no-img-element -- blob preview */
+                  {mealImagePreviewUrl || existingImageUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element -- blob or remote preview */
                     <img
-                      src={mealImagePreviewUrl}
+                      src={mealImagePreviewUrl ?? existingImageUrl ?? ""}
                       alt=""
                       className="size-full object-cover"
                     />
@@ -593,10 +668,13 @@ export function CreateMealSheet() {
                     <ImagePlus className="size-4" />
                   )}
                 </button>
-                {mealImagePreviewUrl ? (
+                {mealImagePreviewUrl || existingImageUrl ? (
                   <button
                     type="button"
-                    onClick={() => setMealImageFile(null)}
+                    onClick={() => {
+                      setMealImageFile(null);
+                      setExistingImageUrl(null);
+                    }}
                     aria-label="Remove meal photo"
                     className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-foreground text-background shadow-sm"
                   >
@@ -847,10 +925,12 @@ export function CreateMealSheet() {
           >
             {success ? (
               <>
-                <Check className="size-4" /> Published!
+                <Check className="size-4" /> {isEditMode ? "Saved!" : "Published!"}
               </>
             ) : submitting ? (
-              "Publishing…"
+              isEditMode ? "Saving…" : "Publishing…"
+            ) : isEditMode ? (
+              "Save changes"
             ) : (
               "Publish Meal"
             )}

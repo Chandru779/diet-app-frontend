@@ -27,8 +27,8 @@ export type ApiMealIngredient = {
   mealCatalogId?: string | null;
   name: string;
   quantity: number;
-  /** How `quantity` is interpreted: weight in g, or item count */
-  quantityUnit: "grams" | "count";
+  /** How `quantity` is interpreted: weight in g, volume in ml, or item count */
+  quantityUnit: "grams" | "count" | "ml";
   proteinG: number;
   carbsG: number;
   fatG: number;
@@ -56,6 +56,11 @@ export type ApiMeal = {
   fatG: number;
   caloriesKcal: number;
   fiberG: number | null;
+  prepTimeMinutes?: number | null;
+  difficulty?: "easy" | "medium" | "hard" | null;
+  isQuick?: boolean;
+  isBeginnerFriendly?: boolean;
+  isBudgetFriendly?: boolean;
   createdAt: string;
   updatedAt: string;
   user: ApiUser;

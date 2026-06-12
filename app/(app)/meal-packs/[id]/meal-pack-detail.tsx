@@ -16,14 +16,15 @@ import { FeedPostCard } from "@/components/app/feed-post-card";
 import { MealLoadingIllustration } from "@/components/app/meal-loading-illustration";
 import { MealPackStats } from "@/components/app/meal-pack/meal-pack-stats";
 import { ShareMealPackButton } from "@/components/app/meal-pack/share-meal-pack-button";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   deleteMealPack,
   fetchMealPackById,
   recordMealPackView,
   type MealPackDetail,
 } from "@/lib/api/meal-packs";
+import { invalidateMealPacks } from "@/lib/query/invalidate";
 import type { ApiMeal } from "@/lib/types/meal";
-import { useFeedStore } from "@/lib/store/feed-store";
 
 function formatDate(iso: string) {
   return new Intl.DateTimeFormat(undefined, {
@@ -36,7 +37,7 @@ function formatDate(iso: string) {
 export function MealPackDetailView() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const bumpRefresh = useFeedStore((s) => s.bumpRefresh);
+  const queryClient = useQueryClient();
   const [pack, setPack] = useState<MealPackDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -84,7 +85,7 @@ export function MealPackDetailView() {
     setDeleting(true);
     try {
       await deleteMealPack(pack.id);
-      bumpRefresh();
+      await invalidateMealPacks(queryClient, pack.id);
       router.push("/meal-packs");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not delete pack.");
@@ -218,7 +219,7 @@ export function MealPackDetailView() {
         <p className="meal-card rounded-2xl bg-white px-4 py-6 text-center text-sm text-muted-foreground">
           {pack.isOwner
             ? "This pack has no meals yet. Edit it to add some."
-            : "No public meals are visible in this pack."}
+            : "No meals in this pack."}
         </p>
       ) : (
         <ul className="flex flex-col gap-3">

@@ -141,3 +141,8 @@ export async function updateMeal(
   const res = await http.patch<ApiMeal>(`/meals/${id}`, payload);
   return res.data;
 }
+
+/** DELETE /meals/:id — requires Bearer token; only the meal owner can delete. */
+export async function deleteMeal(id: string): Promise<void> {
+  await http.delete(`/meals/${id}`);
+}

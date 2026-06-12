@@ -1,9 +1,11 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { Heart } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { addFavorite, removeFavorite } from "@/lib/api/favorites";
+import { invalidateSavedMeals } from "@/lib/query/invalidate";
 import { getAuthAccessTokenFromCookie } from "@/lib/auth/auth-cookie";
 import {
   resolveFavorited,
@@ -23,6 +25,7 @@ export function FavoriteButton({
   className,
 }: FavoriteButtonProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const overrides = useFavoritesStore((s) => s.overrides);
   const setFavoritedInStore = useFavoritesStore((s) => s.setFavorited);
   const clearOverride = useFavoritesStore((s) => s.clearOverride);
@@ -49,6 +52,7 @@ export function FavoriteButton({
       } else {
         await removeFavorite(mealId);
       }
+      await invalidateSavedMeals(queryClient);
     } catch {
       if (next) {
         clearOverride(mealId);

@@ -73,7 +73,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="pointer-events-none fixed inset-x-0 bottom-[var(--vv-bottom-inset,0px)] z-40"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 translate-y-[calc(-1*var(--vv-bottom-inset,0px))] will-change-transform"
       aria-label="Main navigation"
     >
       <div className="bg-feed-header pointer-events-auto relative rounded-t-[2rem] shadow-[0_-4px_24px_rgba(0,0,0,0.06)] after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-[var(--vv-bottom-inset,0px)] after:bg-feed-header">

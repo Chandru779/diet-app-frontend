@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { MealCoverImage } from "@/components/app/meal-cover-image";
 import { ArrowRight } from "lucide-react";
-import { fetchMeals } from "@/lib/api/meal";
+import { useHomeMeals } from "@/lib/hooks/use-home-meals";
 import { MARKETING_COPY } from "@/lib/constants/marketing-copy";
 import {
   discoverMealsFallback,
@@ -98,33 +97,13 @@ function MealShowcasePanel({
 }
 
 export function HomeMealCarousel() {
-  const [meals, setMeals] = useState<ShowcaseMeal[] | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchMeals()
-      .then((rows) => {
-        if (cancelled) return;
-        const picked = pickCarouselMealsFromApi(rows, 3);
-        setMeals(picked.length > 0 ? picked : null);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setMeals(null);
-      })
-      .finally(() => {
-        if (cancelled) return;
-        setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
+  const { data, isPending, isError } = useHomeMeals();
+  const picked =
+    data && !isError ? pickCarouselMealsFromApi(data, 3) : [];
+  const loading = isPending;
   const displayMeals: ShowcaseMeal[] =
-    meals && meals.length > 0
-      ? meals
+    picked.length > 0
+      ? picked
       : discoverMealsFallback(3).map((m) => ({
           id: m.id,
           title: m.title,

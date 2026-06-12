@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Nunito, Sansita } from "next/font/google";
+import { QueryProvider } from "@/components/providers/query-provider";
 import { BRAND, brandColors } from "@/lib/constants/branding";
 import "./globals.css";
 
@@ -57,7 +58,7 @@ export default function RootLayout({
       <body
         className={`${nunito.variable} ${sansita.variable} font-sans antialiased`}
       >
-        {children}
+        <QueryProvider>{children}</QueryProvider>
       </body>
     </html>
   );

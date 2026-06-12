@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { fetchCollections, type MealCollectionSummary } from "@/lib/api/collections";
 import { fetchFeedHome } from "@/lib/api/feed";
 import type { FeedSection } from "@/lib/types/feed";
+import type { ApiMeal } from "@/lib/types/meal";
 
 type FeedState = {
   /** Increment to trigger a re-fetch in MealList */
@@ -9,7 +10,10 @@ type FeedState = {
   bumpRefresh: () => void;
   /** Controls Create Meal bottom sheet visibility */
   isCreateSheetOpen: boolean;
+  /** When set, the sheet opens in edit mode for this meal */
+  editingMeal: ApiMeal | null;
   openCreateSheet: () => void;
+  openEditSheet: (meal: ApiMeal) => void;
   closeCreateSheet: () => void;
   homeSections: FeedSection[];
   homeLoading: boolean;
@@ -30,8 +34,10 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   refreshKey: 0,
   bumpRefresh: () => set((s) => ({ refreshKey: s.refreshKey + 1 })),
   isCreateSheetOpen: false,
-  openCreateSheet: () => set({ isCreateSheetOpen: true }),
-  closeCreateSheet: () => set({ isCreateSheetOpen: false }),
+  editingMeal: null,
+  openCreateSheet: () => set({ isCreateSheetOpen: true, editingMeal: null }),
+  openEditSheet: (meal) => set({ isCreateSheetOpen: true, editingMeal: meal }),
+  closeCreateSheet: () => set({ isCreateSheetOpen: false, editingMeal: null }),
   homeSections: [],
   homeLoading: false,
   homeError: null,

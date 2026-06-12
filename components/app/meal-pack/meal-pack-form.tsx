@@ -7,12 +7,13 @@ import { ArrowLeft } from "lucide-react";
 import { AppPageHeader } from "@/components/app/app-page-header";
 import { MealPackMealPicker } from "@/components/app/meal-pack/meal-pack-meal-picker";
 import { MealPackSelectedBar } from "@/components/app/meal-pack/meal-pack-selected-bar";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   createMealPack,
   fetchMealPackById,
   updateMealPack,
 } from "@/lib/api/meal-packs";
-import { useFeedStore } from "@/lib/store/feed-store";
+import { invalidateMealPacks } from "@/lib/query/invalidate";
 import { toPickableMeal, type PickableMeal } from "@/lib/types/meal-pack";
 
 type MealPackFormProps = {
@@ -21,7 +22,7 @@ type MealPackFormProps = {
 
 export function MealPackForm({ packId }: MealPackFormProps) {
   const router = useRouter();
-  const bumpRefresh = useFeedStore((s) => s.bumpRefresh);
+  const queryClient = useQueryClient();
   const isEdit = Boolean(packId);
 
   const [title, setTitle] = useState("");
@@ -98,13 +99,13 @@ export function MealPackForm({ packId }: MealPackFormProps) {
 
       if (isEdit && packId) {
         await updateMealPack(packId, payload);
-        bumpRefresh();
+        await invalidateMealPacks(queryClient, packId);
         router.push(`/meal-packs/${packId}`);
         return;
       }
 
       await createMealPack(payload);
-      bumpRefresh();
+      await invalidateMealPacks(queryClient);
 
       if (andCreateAnother) {
         setTitle("");

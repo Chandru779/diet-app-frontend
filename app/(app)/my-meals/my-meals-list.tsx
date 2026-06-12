@@ -1,57 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Plus, Salad } from "lucide-react";
 import { AppEmptyState } from "@/components/app/app-empty-state";
 import { AppPageHeader } from "@/components/app/app-page-header";
 import { AppPrimaryButton } from "@/components/app/app-primary-button";
-import { FeedPostCard } from "@/components/app/feed-post-card";
+import { MyMealCard } from "@/components/app/my-meal-card";
 import { MealEmptyIllustration } from "@/components/app/meal-empty-illustration";
 import { MealLoadingIllustration } from "@/components/app/meal-loading-illustration";
-import { fetchMealsByUserId, fetchMealsByUsername } from "@/lib/api/meal";
+import { useMyMeals } from "@/lib/hooks/use-my-meals";
 import { useFeedStore } from "@/lib/store/feed-store";
-import { useAuthStore } from "@/lib/store/auth-store";
-import type { ApiMeal } from "@/lib/types/meal";
 
 export function MyMealsList() {
-  const refreshKey = useFeedStore((s) => s.refreshKey);
   const openCreateSheet = useFeedStore((s) => s.openCreateSheet);
-  const userId = useAuthStore((s) => s.user?.id ?? null);
-  const username = useAuthStore((s) => s.user?.username ?? null);
-  const [meals, setMeals] = useState<ApiMeal[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-
-    const run = async () => {
-      try {
-        let rows: ApiMeal[];
-        if (userId) {
-          rows = await fetchMealsByUserId(userId);
-        } else if (username) {
-          rows = await fetchMealsByUsername(username);
-        } else {
-          rows = [];
-        }
-        if (!cancelled) setMeals(rows);
-      } catch {
-        if (!cancelled) {
-          setError("Could not load meals. Make sure the backend is running.");
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshKey, userId, username]);
+  const { data: meals = [], isPending: loading, isError } = useMyMeals();
+  const error = isError
+    ? "Could not load meals. Make sure the backend is running."
+    : null;
 
   const listEmpty = !loading && !error && meals.length === 0;
   const mealCount = meals.length;
@@ -131,7 +95,12 @@ export function MyMealsList() {
           <ul className="flex flex-col gap-3">
             {meals.map((meal) => (
               <li key={meal.id}>
-                <FeedPostCard post={meal} />
+                <MyMealCard
+                  meal={meal}
+                  onDeleted={() =>
+                    setMeals((prev) => prev.filter((m) => m.id !== meal.id))
+                  }
+                />
               </li>
             ))}
           </ul>

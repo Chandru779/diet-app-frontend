@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { MealCoverImage } from "@/components/app/meal-cover-image";
 import { ChevronRight } from "lucide-react";
-import { fetchMeals } from "@/lib/api/meal";
+import { useHomeMeals } from "@/lib/hooks/use-home-meals";
 import { MARKETING_COPY } from "@/lib/constants/marketing-copy";
 import {
   discoverMealsFallback,
@@ -109,40 +108,12 @@ function DiscoverSkeleton() {
 }
 
 export function HomeDiscoverMeals() {
-  const [meals, setMeals] = useState<ShowcaseMealCard[] | null>(null);
-  const [fromApi, setFromApi] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchMeals()
-      .then((rows) => {
-        if (cancelled) return;
-        const picked = pickShowcaseMealsFromApi(rows, DISCOVER_LIMIT);
-        if (picked.length > 0) {
-          setMeals(picked);
-          setFromApi(true);
-        } else {
-          setMeals(null);
-          setFromApi(false);
-        }
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setMeals(null);
-        setFromApi(false);
-      })
-      .finally(() => {
-        if (cancelled) return;
-        setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const displayMeals =
-    meals && meals.length > 0 ? meals : discoverMealsFallback(DISCOVER_LIMIT);
+  const { data, isPending, isError } = useHomeMeals();
+  const picked =
+    data && !isError ? pickShowcaseMealsFromApi(data, DISCOVER_LIMIT) : [];
+  const fromApi = picked.length > 0;
+  const loading = isPending;
+  const displayMeals = fromApi ? picked : discoverMealsFallback(DISCOVER_LIMIT);
 
   return (
     <section className="space-y-3">
