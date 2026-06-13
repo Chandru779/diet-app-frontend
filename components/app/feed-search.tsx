@@ -1,4 +1,4 @@
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Loader2, Search, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type FeedSearchProps = {
@@ -9,6 +9,7 @@ type FeedSearchProps = {
   onFilterClick?: () => void;
   activeFilterCount?: number;
   filterButtonLabel?: string;
+  loading?: boolean;
 };
 
 export function FeedSearch({
@@ -19,6 +20,7 @@ export function FeedSearch({
   onFilterClick,
   activeFilterCount = 0,
   filterButtonLabel = "Sort & more",
+  loading = false,
 }: FeedSearchProps) {
   return (
     <div>
@@ -29,11 +31,19 @@ export function FeedSearch({
       ) : null}
 
       <div className="meal-card flex min-h-[48px] items-center gap-2 rounded-2xl bg-white py-1.5 pl-4 pr-1.5 shadow-[0_2px_12px_rgba(0,0,0,0.06)] focus-within:ring-2 focus-within:ring-ring/25">
-        <Search
-          className="size-[18px] shrink-0 text-foreground/70"
-          strokeWidth={2}
-          aria-hidden
-        />
+        {loading ? (
+          <Loader2
+            className="size-[18px] shrink-0 animate-spin text-primary"
+            strokeWidth={2}
+            aria-label="Searching"
+          />
+        ) : (
+          <Search
+            className="size-[18px] shrink-0 text-foreground/70"
+            strokeWidth={2}
+            aria-hidden
+          />
+        )}
         <input
           value={value}
           onChange={(e) => onChange(e.target.value)}

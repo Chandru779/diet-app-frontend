@@ -94,7 +94,7 @@ export function MealPreparationEditor({
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-border/50 bg-[#fafbf9]">
+      <div className="overflow-hidden rounded-2xl border border-border/50 bg-muted/30">
         <ul className="divide-y divide-border/40" role="list">
           {steps.map((step, index) => (
             <li

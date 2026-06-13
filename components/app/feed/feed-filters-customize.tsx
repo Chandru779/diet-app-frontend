@@ -4,13 +4,17 @@ import { ChevronRight, SlidersHorizontal } from "lucide-react";
 
 type FeedFiltersCustomizeProps = {
   onClick: () => void;
-  activeCount?: number;
+  filterCount?: number;
+  categoryCount?: number;
 };
 
 export function FeedFiltersCustomize({
   onClick,
-  activeCount = 0,
+  filterCount = 0,
+  categoryCount = 0,
 }: FeedFiltersCustomizeProps) {
+  const hasAny = filterCount > 0 || categoryCount > 0;
+
   return (
     <button
       type="button"
@@ -25,13 +29,21 @@ export function FeedFiltersCustomize({
       <span className="flex min-w-0 flex-1 flex-row items-center gap-2 overflow-hidden">
         <span className="shrink-0 text-sm font-semibold text-foreground">
           Filters
-          {activeCount > 0 ? (
-            <span className="text-primary">({activeCount})</span>
-          ) : null}
         </span>
-        <span className="truncate text-[10px] font-medium text-gray-400">
-          Customize your meal preferences
-        </span>
+        {hasAny ? (
+          <span className="flex shrink-0 items-center gap-1">
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+              {filterCount} filter{filterCount === 1 ? "" : "s"}
+            </span>
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
+              {categoryCount} categor{categoryCount === 1 ? "y" : "ies"}
+            </span>
+          </span>
+        ) : (
+          <span className="truncate text-[10px] font-medium text-gray-400">
+            Customize your meal preferences
+          </span>
+        )}
       </span>
       <ChevronRight
         className="size-4 shrink-0 text-muted-foreground/60"

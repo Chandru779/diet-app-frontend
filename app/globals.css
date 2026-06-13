@@ -34,6 +34,8 @@
 
     /* Semantic */
     --destructive: oklch(0.577 0.245 27.325);
+    --success: oklch(0.52 0.13 150);
+    --success-foreground: oklch(0.99 0 0);
 
     /* Chrome */
     --border: oklch(0.89 0.01 80);
@@ -201,6 +203,23 @@
     }
     100% {
       transform: translateX(320%);
+    }
+  }
+
+  /* Popover / dropdown entrance — soft fade + lift */
+  .animate-popover {
+    animation: popover-in 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: top center;
+  }
+
+  @keyframes popover-in {
+    from {
+      opacity: 0;
+      transform: translateY(-6px) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
     }
   }
 }

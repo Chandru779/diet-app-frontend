@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { RotateCcw, Search, X } from "lucide-react";
+import { Loader2, RotateCcw, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FeedRangeSlider } from "@/components/app/feed/feed-range-slider";
 import {
@@ -25,7 +25,10 @@ type MealFilterSheetProps = {
   onClose: () => void;
   value: FeedAdvancedFilters;
   onApply: (next: FeedAdvancedFilters) => void;
+  /** Notifies the parent of the live draft so it can preview a result count. */
+  onDraftChange?: (draft: FeedAdvancedFilters) => void;
   resultCount?: number;
+  resultLoading?: boolean;
 };
 
 function cloneFilters(f: FeedAdvancedFilters): FeedAdvancedFilters {
@@ -151,7 +154,9 @@ export function MealFilterSheet({
   onClose,
   value,
   onApply,
+  onDraftChange,
   resultCount,
+  resultLoading = false,
 }: MealFilterSheetProps) {
   const [draft, setDraft] = useState<FeedAdvancedFilters>(() =>
     cloneFilters(value),
@@ -160,9 +165,18 @@ export function MealFilterSheet({
 
   useEffect(() => setMounted(true), []);
 
+  // Seed the draft only when the sheet opens, so parent re-renders (e.g. the
+  // live count updating) don't wipe in-progress edits.
+  const wasOpenRef = useRef(false);
   useEffect(() => {
-    if (open) setDraft(cloneFilters(value));
+    if (open && !wasOpenRef.current) setDraft(cloneFilters(value));
+    wasOpenRef.current = open;
   }, [open, value]);
+
+  // Mirror the live draft up to the parent for the result-count preview.
+  useEffect(() => {
+    if (open) onDraftChange?.(draft);
+  }, [open, draft, onDraftChange]);
 
   useEffect(() => {
     if (!open) return;
@@ -526,13 +540,18 @@ export function MealFilterSheet({
           <button
             type="button"
             onClick={handleApply}
-            className="flex min-h-12 w-full items-center justify-center rounded-2xl bg-primary text-sm font-bold text-primary-foreground shadow-soft transition hover:opacity-95 active:scale-[0.99]"
+            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-bold text-primary-foreground shadow-soft transition hover:opacity-95 active:scale-[0.99]"
           >
-            {resultCount != null
-              ? `Apply Filters (${resultCount})`
-              : activeCount > 0
-                ? `Apply Filters (${activeCount})`
-                : "Apply Filters"}
+            {resultLoading ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+            ) : null}
+            {resultLoading
+              ? "Updating…"
+              : resultCount != null
+                ? `Show ${resultCount} meal${resultCount === 1 ? "" : "s"}`
+                : activeCount > 0
+                  ? `Apply Filters (${activeCount})`
+                  : "Apply Filters"}
           </button>
         </div>
       </div>

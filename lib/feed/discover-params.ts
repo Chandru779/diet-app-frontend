@@ -2,20 +2,18 @@ import type { FeedAdvancedFilters } from "@/lib/config/feed-advanced-filters";
 import { prepTimeToMax } from "@/lib/config/feed-advanced-filters";
 import { MEAL_FEED_LIGHT_MAX_KCAL } from "@/lib/config/meal-feed-filters";
 import type { DiscoverQueryParams } from "@/lib/types/meal-discover";
-import type { MacroChipId, PrimaryCategoryId } from "@/lib/config/feed-ui";
+import type { PrimaryCategoryId } from "@/lib/config/feed-ui";
 import { FEED_DIET_CHIPS } from "@/lib/config/feed-advanced-filters";
 
 export type FeedDiscoverState = {
   search: string;
   primaryCategory: PrimaryCategoryId | null;
-  macroChips: MacroChipId[];
   sheetFilters: FeedAdvancedFilters;
 };
 
 export function hasActiveDiscoverState(state: FeedDiscoverState): boolean {
   if (state.search.trim()) return true;
   if (state.primaryCategory && state.primaryCategory !== "more") return true;
-  if (state.macroChips.length) return true;
   const f = state.sheetFilters;
   if (f.category) return true;
   if (
@@ -45,19 +43,7 @@ export function hasActiveDiscoverState(state: FeedDiscoverState): boolean {
 export function buildDiscoverParams(
   state: FeedDiscoverState,
 ): DiscoverQueryParams {
-  const categories: string[] = [
-    ...state.macroChips.map((id) => {
-      const map: Record<MacroChipId, string> = {
-        "protein-30g-plus": "protein-30g-plus",
-        "low-carb": "low-carb",
-        keto: "keto",
-        "gluten-free": "gluten-free",
-        "dairy-free": "dairy-free",
-      };
-      return map[id];
-    }),
-    ...(state.sheetFilters.categorySlugs ?? []),
-  ];
+  const categories: string[] = [...(state.sheetFilters.categorySlugs ?? [])];
 
   for (const diet of state.sheetFilters.dietChips ?? []) {
     const chip = FEED_DIET_CHIPS.find((c) => c.id === diet);

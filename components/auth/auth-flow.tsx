@@ -37,8 +37,9 @@ export function AuthFlow() {
   async function finishSession(
     token: string,
     user: Parameters<typeof setSession>[0],
+    refreshToken?: string,
   ) {
-    setSession(user, token);
+    setSession(user, token, refreshToken);
     router.push("/feed");
     router.refresh();
   }
@@ -67,12 +68,12 @@ export function AuthFlow() {
       const result = await verifyEmailAuth(flowId, code);
       if (result.status === "needs_username" && result.token && result.user) {
         setPendingToken(result.token);
-        setSession(result.user, result.token);
+        setSession(result.user, result.token, result.refreshToken);
         setStep("username");
         return;
       }
       if (result.token && result.user) {
-        await finishSession(result.token, result.user);
+        await finishSession(result.token, result.user, result.refreshToken);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Invalid code.");
@@ -86,8 +87,8 @@ export function AuthFlow() {
     setError(null);
     setLoading(true);
     try {
-      const { token, user } = await saveUsername(username.trim());
-      await finishSession(token, user);
+      const { token, user, refreshToken } = await saveUsername(username.trim());
+      await finishSession(token, user, refreshToken);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save username.");
     } finally {

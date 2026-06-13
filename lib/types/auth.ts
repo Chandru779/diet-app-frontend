@@ -10,6 +10,8 @@ export type AuthUser = {
 
 export type AuthSessionPayload = {
   token: string;
+  refreshToken?: string;
+  expiresIn?: number;
   user: AuthUser;
 };
 
@@ -21,6 +23,8 @@ export type EmailStartResponse = {
 export type AuthVerifyResponse = {
   status: "complete" | "needs_username";
   token?: string;
+  refreshToken?: string;
+  expiresIn?: number;
   user?: AuthUser;
 };
 

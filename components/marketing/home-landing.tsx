@@ -13,7 +13,7 @@ export function HomeLanding() {
   return (
     <>
       <RedirectIfAuthed to="/feed" />
-      <main className="relative min-h-[100dvh] bg-[#f8faf9]">
+      <main className="relative min-h-[100dvh] bg-background">
         <div className="relative mx-auto flex w-full min-w-0 max-w-sm flex-col gap-5 px-4 py-5 pb-10">
           <HomeHero />
           <HomeCategoryCards />

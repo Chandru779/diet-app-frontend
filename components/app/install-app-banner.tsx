@@ -3,7 +3,6 @@
 import { Download, Share, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { usePwaInstall } from "@/lib/hooks/use-pwa-install";
-import { cn } from "@/lib/utils";
 
 const DISMISS_KEY = "pwa-install-dismissed";
 
@@ -38,61 +37,52 @@ export function InstallAppBanner() {
     }
   };
 
+  const description = isIOS
+    ? "Tap Share, then Add to Home Screen"
+    : "Use it like a native app from your home screen";
+
   return (
     <div
-      className={cn(
-        "relative overflow-hidden rounded-2xl border border-primary/20 bg-primary/8 p-4 shadow-sm",
-      )}
+      className="meal-card flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm"
       role="region"
       aria-label="Install app"
     >
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+        {isIOS ? (
+          <Share className="size-5" strokeWidth={2.25} aria-hidden />
+        ) : (
+          <Download className="size-5" strokeWidth={2.25} aria-hidden />
+        )}
+      </span>
+
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-foreground">
+          Install the app
+        </p>
+        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+          {description}
+        </p>
+      </div>
+
+      {!isIOS ? (
+        <button
+          type="button"
+          onClick={handleInstall}
+          disabled={installing}
+          className="shrink-0 rounded-xl bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
+        >
+          {installing ? "Opening…" : "Install"}
+        </button>
+      ) : null}
+
       <button
         type="button"
         onClick={handleDismiss}
-        className="absolute right-2 top-2 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+        className="-mr-1 shrink-0 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
         aria-label="Dismiss install banner"
       >
         <X className="size-4" aria-hidden />
       </button>
-
-      <div className="flex items-start gap-3 pr-8">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-          {isIOS ? (
-            <Share className="size-5" strokeWidth={2.25} aria-hidden />
-          ) : (
-            <Download className="size-5" strokeWidth={2.25} aria-hidden />
-          )}
-        </span>
-
-        <div className="min-w-0 flex-1">
-          <p className="font-heading text-sm font-bold text-foreground">
-            Install {isIOS ? "on your home screen" : "the app"}
-          </p>
-          {isIOS ? (
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              Tap the Share button in Safari, then choose{" "}
-              <span className="font-medium text-foreground">
-                Add to Home Screen
-              </span>
-              .
-            </p>
-          ) : (
-            <>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Open Dietician from your home screen like a native app.
-              </p>
-              <button
-                type="button"
-                onClick={handleInstall}
-                disabled={installing}
-                className="mt-3 inline-flex items-center rounded-xl bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
-              >
-                {installing ? "Opening install…" : "Install app"}
-              </button>
-            </>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

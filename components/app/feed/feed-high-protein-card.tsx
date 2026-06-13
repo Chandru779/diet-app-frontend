@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { MealNavLink } from "@/components/app/meal-nav-link";
 import { ChefHat, Clock, Flame, Utensils } from "lucide-react";
 import { MealCoverImage } from "@/components/app/meal-cover-image";
@@ -10,7 +11,7 @@ type FeedHighProteinCardProps = {
   meal: DiscoverMeal;
 };
 
-export function FeedHighProteinCard({ meal }: FeedHighProteinCardProps) {
+function FeedHighProteinCardImpl({ meal }: FeedHighProteinCardProps) {
   const badges: { label: string; className: string }[] = [];
   if (meal.categorySlugs.includes("high-protein") || meal.proteinG >= 30) {
     badges.push({
@@ -137,3 +138,5 @@ export function FeedHighProteinCard({ meal }: FeedHighProteinCardProps) {
     </div>
   );
 }
+
+export const FeedHighProteinCard = memo(FeedHighProteinCardImpl);

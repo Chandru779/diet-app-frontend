@@ -3,8 +3,8 @@
 import { useEffect } from "react";
 import { fetchCurrentUser } from "@/lib/api/auth";
 import {
-  clearAuthAccessTokenCookie,
   getAuthAccessTokenFromCookie,
+  getAuthRefreshTokenFromCookie,
 } from "@/lib/auth/auth-cookie";
 import { useAuthStore } from "@/lib/store/auth-store";
 
@@ -20,16 +20,28 @@ export function AuthBootstrap({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const api = useAuthStore.persist;
     const validate = () => {
-      const token = getAuthAccessTokenFromCookie();
-      if (!token) {
+      const accessToken = getAuthAccessTokenFromCookie();
+      const refreshToken = getAuthRefreshTokenFromCookie();
+      // No credentials at all — make sure we aren't showing a stale session.
+      if (!accessToken && !refreshToken) {
         if (useAuthStore.getState().isLoggedIn) logout();
         return;
       }
+      // `http` transparently refreshes on a 401, so this both validates the
+      // access token and renews it when expired.
       fetchCurrentUser()
-        .then((user) => setSession(user, token))
+        .then((user) => {
+          const token = getAuthAccessTokenFromCookie();
+          if (token) setSession(user, token);
+        })
         .catch(() => {
-          clearAuthAccessTokenCookie();
-          logout();
+          // The refresh interceptor already logs out when the refresh token is
+          // rejected. Any error reaching here with credentials still present is
+          // transient (offline, 5xx, timeout) — keep the session so the user
+          // isn't bounced to /login over a network blip.
+          if (!getAuthRefreshTokenFromCookie()) {
+            logout();
+          }
         });
     };
 

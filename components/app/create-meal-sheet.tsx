@@ -36,13 +36,16 @@ import {
   type MealCatalogItem,
 } from "@/lib/types/meal-catalog";
 import type { MealType } from "@/lib/types/meal";
-import { createMeal, fetchMealCatalog, updateMeal } from "@/lib/api/meal";
+import { createMeal, updateMeal } from "@/lib/api/meal";
+import { useMealCatalog } from "@/lib/hooks/use-meal-catalog";
 import {
   buildPreparationStepsPayload,
   MealPreparationEditor,
   type PreparationStepRow,
 } from "@/components/app/meal-preparation-editor";
 import { NUTRIENT_COLORS } from "@/lib/constants/nutrients";
+import { Select, type SelectOption } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 import { uploadMealImage } from "@/lib/api/media";
 
@@ -95,6 +98,13 @@ const CREATE_MEAL_TYPE_OPTIONS: {
   { value: "post_workout", label: "Post-workout", emoji: "🏋️" },
   { value: "quick_meals", label: "Quick", emoji: "⚡" },
 ];
+
+const MEAL_TYPE_SELECT_OPTIONS: SelectOption<MealType>[] =
+  CREATE_MEAL_TYPE_OPTIONS.map((opt) => ({
+    value: opt.value,
+    label: opt.label,
+    icon: opt.emoji,
+  }));
 
 function prepPresetToMinutes(preset: PrepTimePreset): number {
   if (preset === 999) return 75;
@@ -187,11 +197,20 @@ export function CreateMealSheet() {
   );
   const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
   const mealImageInputRef = useRef<HTMLInputElement>(null);
-  /** Full catalog (GET /meals/catalog with no query) — used for resolution & macro math. */
-  const [catalog, setCatalog] = useState<MealCatalogItem[]>([]);
-  const [catalogStatus, setCatalogStatus] = useState<
-    "idle" | "loading" | "ok" | "error"
-  >("idle");
+  /**
+   * Full catalog (GET /meals/catalog with no query) — used for resolution &
+   * macro math. Cached via React Query so reopening the sheet reuses the
+   * previously fetched list instead of refetching every time.
+   */
+  const catalogQuery = useMealCatalog("", { enabled: isOpen });
+  const catalog = useMemo(() => catalogQuery.data ?? [], [catalogQuery.data]);
+  const catalogStatus: "idle" | "loading" | "ok" | "error" = !isOpen
+    ? "idle"
+    : catalogQuery.isError
+      ? "error"
+      : catalogQuery.isSuccess
+        ? "ok"
+        : "loading";
   const [prepSteps, setPrepSteps] = useState<PreparationStepRow[]>([]);
   const [mealType, setMealType] = useState<MealType | null>(null);
   const [prepTimePreset, setPrepTimePreset] = useState<PrepTimePreset | null>(
@@ -219,31 +238,6 @@ export function CreateMealSheet() {
     setMealImagePreviewUrl(url);
     return () => URL.revokeObjectURL(url);
   }, [mealImageFile]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    let cancelled = false;
-    setCatalogStatus("loading");
-
-    fetchMealCatalog()
-      .then((items) => {
-        if (!cancelled) {
-          setCatalog(items);
-          setCatalogStatus("ok");
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setCatalog([]);
-          setCatalogStatus("error");
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -548,13 +542,13 @@ export function CreateMealSheet() {
         }`}
       >
         {/* Header */}
-        <div className="shrink-0 rounded-t-3xl border-b border-border/40 bg-gradient-to-r from-emerald-50/80 to-white">
+        <div className="bg-feed-header shrink-0 rounded-t-3xl border-b border-border/40">
           <div className="flex justify-center pt-3 pb-1">
-            <div className="h-1 w-10 rounded-full bg-emerald-200/70" />
+            <div className="h-1 w-10 rounded-full bg-primary/20" />
           </div>
           <div className="flex items-center justify-between px-5 pb-3.5">
             <div className="flex min-w-0 items-center gap-3">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                 <Salad className="size-5" strokeWidth={1.75} />
               </div>
               <div className="min-w-0">
@@ -691,16 +685,15 @@ export function CreateMealSheet() {
                   className="mb-1 block text-sm font-semibold text-foreground"
                 >
                   Meal name{" "}
-                  <span className="text-rose-500" aria-hidden>
+                  <span className="text-destructive" aria-hidden>
                     *
                   </span>
                 </label>
-                <input
+                <Input
                   id="meal-title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Grilled Chicken Bowl"
-                  className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-ring focus:ring-offset-1"
                 />
               </div>
 
@@ -712,13 +705,12 @@ export function CreateMealSheet() {
                   Description{" "}
                   <span className="text-muted-foreground/50">(optional)</span>
                 </label>
-                <input
+                <Input
                   id="meal-desc"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Short description for the feed…"
                   maxLength={100}
-                  className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-ring focus:ring-offset-1"
                 />
               </div>
             </div>
@@ -731,31 +723,23 @@ export function CreateMealSheet() {
             <div className="space-y-3">
               <div>
                 <label
+                  id="meal-type-label"
                   htmlFor="meal-type"
                   className="mb-1.5 block text-xs font-semibold text-foreground"
                 >
                   Meal type
                 </label>
-                <div className="relative">
-                  <select
-                    id="meal-type"
-                    value={mealType ?? ""}
-                    onChange={(e) =>
-                      setMealType(
-                        e.target.value ? (e.target.value as MealType) : null,
-                      )
-                    }
-                    className="h-10 w-full appearance-none rounded-xl border border-input bg-background py-2 pl-3 pr-9 text-sm outline-none transition focus:ring-2 focus:ring-ring focus:ring-offset-1"
-                  >
-                    <option value="">Select type (optional)</option>
-                    {CREATE_MEAL_TYPE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.emoji} {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronsUpDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground opacity-60" />
-                </div>
+                <Select<MealType>
+                  id="meal-type"
+                  size="sm"
+                  value={mealType}
+                  onChange={setMealType}
+                  options={MEAL_TYPE_SELECT_OPTIONS}
+                  placeholder="Select type (optional)"
+                  clearable
+                  clearLabel="No specific type"
+                  aria-labelledby="meal-type-label"
+                />
               </div>
 
               {filledIngredientCount > 0 ? (
@@ -764,9 +748,7 @@ export function CreateMealSheet() {
                   <span
                     className={cn(
                       "font-semibold",
-                      derivedIsVegetarian
-                        ? "text-emerald-700"
-                        : "text-orange-700",
+                      derivedIsVegetarian ? "text-success" : "text-amber-600",
                     )}
                   >
                     {derivedIsVegetarian ? "Vegetarian" : "Non-veg"}
@@ -917,9 +899,9 @@ export function CreateMealSheet() {
             disabled={!canSubmit}
             className={`flex w-full items-center justify-center gap-2 rounded-xl py-4 text-sm font-bold transition ${
               success
-                ? "bg-green-600 text-white"
+                ? "bg-success text-success-foreground"
                 : canSubmit
-                  ? "bg-primary text-white hover:opacity-90 active:scale-[0.99]"
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.99]"
                   : "cursor-not-allowed bg-muted text-muted-foreground"
             }`}
           >
@@ -958,10 +940,7 @@ function IngredientCatalogCombobox({
 }: IngredientCatalogComboboxProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [remoteList, setRemoteList] = useState<MealCatalogItem[]>([]);
-  const [searchStatus, setSearchStatus] = useState<
-    "idle" | "loading" | "ok" | "error"
-  >("idle");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [panelBox, setPanelBox] = useState<{
     top: number;
     left: number;
@@ -973,6 +952,31 @@ function IngredientCatalogCombobox({
 
   const trimmed = query.trim();
   const showRemote = trimmed.length > 0;
+
+  // Debounce the search term that feeds the (cached) query key so we only hit
+  // the network once the user pauses typing.
+  useEffect(() => {
+    if (!showRemote) {
+      setDebouncedSearch("");
+      return;
+    }
+    const t = setTimeout(() => setDebouncedSearch(trimmed), 250);
+    return () => clearTimeout(t);
+  }, [trimmed, showRemote]);
+
+  // Each distinct search term is cached under its own key; repeating a search
+  // reuses the cached results, a new term fetches fresh.
+  const searchQuery = useMealCatalog(debouncedSearch, {
+    enabled: showRemote && debouncedSearch.length > 0,
+  });
+  const remoteList = searchQuery.data ?? [];
+  const searchStatus: "idle" | "loading" | "ok" | "error" = !showRemote
+    ? "idle"
+    : searchQuery.isError
+      ? "error"
+      : searchQuery.isSuccess && debouncedSearch === trimmed
+        ? "ok"
+        : "loading";
 
   const selected =
     getCatalogItemByKey(allCatalog, valueKey) ??
@@ -1025,35 +1029,6 @@ function IngredientCatalogCombobox({
     document.addEventListener("mousedown", onDocMouseDown);
     return () => document.removeEventListener("mousedown", onDocMouseDown);
   }, []);
-
-  useEffect(() => {
-    if (!showRemote) {
-      setRemoteList([]);
-      setSearchStatus("idle");
-      return;
-    }
-    let cancelled = false;
-    setSearchStatus("loading");
-    const t = setTimeout(() => {
-      fetchMealCatalog(trimmed)
-        .then((items) => {
-          if (!cancelled) {
-            setRemoteList(items);
-            setSearchStatus("ok");
-          }
-        })
-        .catch(() => {
-          if (!cancelled) {
-            setRemoteList([]);
-            setSearchStatus("error");
-          }
-        });
-    }, 250);
-    return () => {
-      cancelled = true;
-      clearTimeout(t);
-    };
-  }, [trimmed]);
 
   const options: MealCatalogItem[] = showRemote ? remoteList : [...allCatalog];
 

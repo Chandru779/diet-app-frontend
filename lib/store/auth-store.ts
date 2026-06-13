@@ -1,8 +1,9 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import {
-  clearAuthAccessTokenCookie,
+  clearAuthTokens,
   setAuthAccessTokenCookie,
+  setAuthRefreshTokenCookie,
 } from "@/lib/auth/auth-cookie";
 import type { AuthUser } from "@/lib/types/auth";
 
@@ -10,7 +11,12 @@ type AuthState = {
   isLoggedIn: boolean;
   user: AuthUser | null;
   token: string | null;
-  setSession: (user: AuthUser, token: string) => void;
+  refreshToken: string | null;
+  /**
+   * Persists a session. `refreshToken` is optional so callers that only refresh
+   * the user/access token (e.g. profile updates) don't wipe the refresh cookie.
+   */
+  setSession: (user: AuthUser, token: string, refreshToken?: string) => void;
   logout: () => void;
 };
 
@@ -20,13 +26,25 @@ export const useAuthStore = create<AuthState>()(
       isLoggedIn: false,
       user: null,
       token: null,
-      setSession: (user, token) => {
+      refreshToken: null,
+      setSession: (user, token, refreshToken) => {
         setAuthAccessTokenCookie(token);
-        set({ isLoggedIn: true, user, token });
+        if (refreshToken) setAuthRefreshTokenCookie(refreshToken);
+        set((state) => ({
+          isLoggedIn: true,
+          user,
+          token,
+          refreshToken: refreshToken ?? state.refreshToken,
+        }));
       },
       logout: () => {
-        clearAuthAccessTokenCookie();
-        set({ isLoggedIn: false, user: null, token: null });
+        clearAuthTokens();
+        set({
+          isLoggedIn: false,
+          user: null,
+          token: null,
+          refreshToken: null,
+        });
       },
     }),
     {
@@ -35,6 +53,7 @@ export const useAuthStore = create<AuthState>()(
         isLoggedIn: s.isLoggedIn,
         user: s.user,
         token: s.token,
+        refreshToken: s.refreshToken,
       }),
     },
   ),

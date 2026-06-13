@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Grid3X3, Tags, X } from "lucide-react";
+import { Grid3X3, Loader2, Tags, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMealCategories } from "@/lib/hooks/use-meal-categories";
 import { FEED_CATEGORY_GROUP_LABELS } from "@/lib/config/feed-ui";
@@ -18,6 +18,10 @@ type FeedMoreCategoriesSheetProps = {
   onClose: () => void;
   selectedSlugs: string[];
   onApply: (slugs: string[]) => void;
+  /** Notifies the parent of the live draft so it can preview a result count. */
+  onDraftChange?: (slugs: string[]) => void;
+  resultCount?: number;
+  resultLoading?: boolean;
   onOpenFilters?: () => void;
 };
 
@@ -26,6 +30,9 @@ export function FeedMoreCategoriesSheet({
   onClose,
   selectedSlugs,
   onApply,
+  onDraftChange,
+  resultCount,
+  resultLoading = false,
   onOpenFilters,
 }: FeedMoreCategoriesSheetProps) {
   const [mounted, setMounted] = useState(false);
@@ -35,9 +42,19 @@ export function FeedMoreCategoriesSheet({
 
   useEffect(() => setMounted(true), []);
 
+  // Seed the draft only on the open transition. Re-seeding on every
+  // `selectedSlugs` reference change (it's a fresh array each parent render)
+  // would wipe the user's in-progress selection whenever the parent re-renders.
+  const wasOpenRef = useRef(false);
   useEffect(() => {
-    if (open) setDraft(selectedSlugs);
+    if (open && !wasOpenRef.current) setDraft(selectedSlugs);
+    wasOpenRef.current = open;
   }, [open, selectedSlugs]);
+
+  // Mirror the live draft up to the parent for the result-count preview.
+  useEffect(() => {
+    if (open) onDraftChange?.(draft);
+  }, [open, draft, onDraftChange]);
 
   useEffect(() => {
     if (!open) return;
@@ -173,10 +190,18 @@ export function FeedMoreCategoriesSheet({
           <button
             type="button"
             onClick={handleApply}
-            className="flex min-h-12 w-full items-center justify-center rounded-2xl bg-primary text-sm font-bold text-primary-foreground shadow-soft transition hover:opacity-95 active:scale-[0.99]"
+            className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-bold text-primary-foreground shadow-soft transition hover:opacity-95 active:scale-[0.99]"
           >
-            Apply Categories
-            {draft.length > 0 ? ` (${draft.length})` : ""}
+            {resultLoading ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+            ) : null}
+            {resultLoading
+              ? "Updating…"
+              : resultCount != null
+                ? `Show ${resultCount} meal${resultCount === 1 ? "" : "s"}`
+                : draft.length > 0
+                  ? `Apply Categories (${draft.length})`
+                  : "Apply Categories"}
           </button>
         </div>
       </div>

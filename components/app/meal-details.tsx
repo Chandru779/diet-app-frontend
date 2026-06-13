@@ -212,7 +212,7 @@ export function MealDetails({ meal }: MealDetailsProps) {
             {meal.preparationSteps.map((step, idx) => (
               <li
                 key={`${idx}-${step.text.slice(0, 24)}`}
-                className="meal-card flex gap-3 rounded-2xl bg-[#fafbf9] px-4 py-3"
+                className="meal-card flex gap-3 rounded-2xl bg-muted/30 px-4 py-3"
               >
                 <span className="w-5 shrink-0 text-right text-sm font-semibold tabular-nums text-muted-foreground">
                   {idx + 1}.

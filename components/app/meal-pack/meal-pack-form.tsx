@@ -7,6 +7,8 @@ import { ArrowLeft } from "lucide-react";
 import { AppPageHeader } from "@/components/app/app-page-header";
 import { MealPackMealPicker } from "@/components/app/meal-pack/meal-pack-meal-picker";
 import { MealPackSelectedBar } from "@/components/app/meal-pack/meal-pack-selected-bar";
+import { Field } from "@/components/ui/field";
+import { Input, Textarea } from "@/components/ui/input";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   createMealPack,
@@ -149,30 +151,24 @@ export function MealPackForm({ packId }: MealPackFormProps) {
         </Link>
       </AppPageHeader>
 
-      <div className="meal-card flex flex-col gap-3 rounded-2xl bg-white p-4">
-        <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-semibold text-muted-foreground">
-            Pack name
-          </span>
-          <input
+      <div className="meal-card flex flex-col gap-3 rounded-2xl bg-card p-4">
+        <Field htmlFor="pack-name" label="Pack name" required>
+          <Input
+            id="pack-name"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Weekly prep"
-            className="rounded-xl border border-border/70 px-3 py-2.5 text-sm outline-none ring-primary/20 focus:ring-2"
           />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-semibold text-muted-foreground">
-            Description (optional)
-          </span>
-          <textarea
+        </Field>
+        <Field htmlFor="pack-description" label="Description" optional>
+          <Textarea
+            id="pack-description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
             placeholder="What's this pack for?"
-            className="resize-none rounded-xl border border-border/70 px-3 py-2.5 text-sm outline-none ring-primary/20 focus:ring-2"
           />
-        </label>
+        </Field>
       </div>
 
       {error ? (

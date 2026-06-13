@@ -1,14 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import {
-  Bookmark,
-  ClipboardList,
-  Home,
-  LogOut,
-  Mail,
-  Package,
-} from "lucide-react";
+import { LogOut, Mail, User } from "lucide-react";
 import { AppMenuRow } from "@/components/app/app-menu-row";
 import { AppPageHeader } from "@/components/app/app-page-header";
 import { InstallAppBanner } from "@/components/app/install-app-banner";
@@ -30,24 +23,25 @@ function ProfileContent() {
   );
 
   return (
-    <div className="flex flex-col gap-3 pb-4">
-      <AppPageHeader title="Profile" subtitle="Your account and shortcuts">
-        <div className="flex items-center gap-3">
-          <div className="flex size-14 shrink-0 items-center justify-center rounded-full bg-primary text-xl font-bold text-primary-foreground shadow-sm ring-2 ring-white">
+    <div className="flex flex-col gap-4 pb-4">
+      <AppPageHeader title="Profile" subtitle="Manage your account">
+        <div className="flex items-center gap-4 rounded-2xl border border-white/70 bg-white/65 p-3.5 shadow-sm backdrop-blur-sm">
+          <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-primary text-2xl font-bold text-primary-foreground shadow-md ring-2 ring-white/80">
             {display.initial}
           </div>
-          <div className="min-w-0">
-            <p className="font-heading text-lg font-bold leading-tight text-foreground">
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-heading text-xl font-bold leading-tight text-foreground">
               {display.firstName}
             </p>
             {username ? (
-              <p className="mt-0.5 text-[13px] font-medium text-muted-foreground">
-                @{username}
-              </p>
+              <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                <User className="size-3 shrink-0" aria-hidden />
+                {username}
+              </span>
             ) : null}
             {email ? (
-              <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground/80">
-                <Mail className="size-3 shrink-0" aria-hidden />
+              <p className="mt-1.5 flex items-center gap-1.5 text-[13px] text-muted-foreground">
+                <Mail className="size-3.5 shrink-0" aria-hidden />
                 <span className="truncate">{email}</span>
               </p>
             ) : null}
@@ -58,36 +52,6 @@ function ProfileContent() {
       <InstallAppBanner />
 
       <ProfileEditForm />
-
-      <section className="flex flex-col gap-2" aria-label="Account menu">
-        <p className="px-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70">
-          Navigate
-        </p>
-        <AppMenuRow
-          href="/feed"
-          icon={Home}
-          title="Meal Feed"
-          description="Discover meals and track macros"
-        />
-        <AppMenuRow
-          href="/my-meals"
-          icon={ClipboardList}
-          title="My Meals"
-          description="Meals you have logged"
-        />
-        <AppMenuRow
-          href="/saved"
-          icon={Bookmark}
-          title="Saved"
-          description="Meals you have hearted"
-        />
-        <AppMenuRow
-          href="/meal-packs"
-          icon={Package}
-          title="Meal Packs"
-          description="Bundles of meals you create"
-        />
-      </section>
 
       <section className="flex flex-col gap-2" aria-label="Account actions">
         <p className="px-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/70">

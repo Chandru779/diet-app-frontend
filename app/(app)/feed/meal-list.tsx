@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { FeedSearch } from "@/components/app/feed-search";
 import { MealFilterSheet } from "@/components/app/meal-filter-sheet";
 import { FeedMoreCategoriesSheet } from "@/components/app/feed/feed-more-categories-sheet";
@@ -10,10 +11,10 @@ import { MealEmptyIllustration } from "@/components/app/meal-empty-illustration"
 import { FeedHeader } from "@/components/app/feed/feed-header";
 import { FeedPrimaryCategories } from "@/components/app/feed/feed-primary-categories";
 import { FeedFiltersCustomize } from "@/components/app/feed/feed-filters-customize";
-import { FeedMacroChips } from "@/components/app/feed/feed-macro-chips";
 import { FeedHomeSections } from "@/components/app/feed/feed-home-sections";
 import { FeedDiscoverResults } from "@/components/app/feed/feed-discover-results";
-import { fetchDiscoverCount, fetchDiscoverMeals } from "@/lib/api/discover";
+import { useInfiniteDiscoverMeals } from "@/lib/hooks/use-discover-meals";
+import { useDiscoverCount } from "@/lib/hooks/use-discover-count";
 import {
   DEFAULT_FEED_ADVANCED_FILTERS,
   countFeedAdvancedFilters,
@@ -21,7 +22,7 @@ import {
   parseFeedAdvancedFilters,
   type FeedAdvancedFilters,
 } from "@/lib/config/feed-advanced-filters";
-import type { MacroChipId, PrimaryCategoryId } from "@/lib/config/feed-ui";
+import type { PrimaryCategoryId } from "@/lib/config/feed-ui";
 import { FEED_PRIMARY_CATEGORIES } from "@/lib/config/feed-ui";
 import {
   buildDiscoverParams,
@@ -29,7 +30,7 @@ import {
   type FeedDiscoverState,
 } from "@/lib/feed/discover-params";
 import { useFeedStore } from "@/lib/store/feed-store";
-import type { DiscoverMeal } from "@/lib/types/meal-discover";
+import { discoverRootKey } from "@/lib/query/query-keys";
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -49,6 +50,7 @@ function parsePrimaryFromUrl(value: string | null): PrimaryCategoryId | null {
 export function MealList() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const refreshKey = useFeedStore((s) => s.refreshKey);
   const sections = useFeedStore((s) => s.homeSections);
   const loadingHome = useFeedStore((s) => s.homeLoading);
@@ -62,37 +64,117 @@ export function MealList() {
   );
 
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [primaryCategory, setPrimaryCategory] =
     useState<PrimaryCategoryId | null>(() =>
       parsePrimaryFromUrl(searchParams.get("category")),
     );
-  const [macroChips, setMacroChips] = useState<MacroChipId[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  // Live drafts mirrored from the open sheets, so the result-count preview
+  // reflects what the user is editing rather than what's already applied.
+  const [filterDraft, setFilterDraft] = useState<FeedAdvancedFilters | null>(
+    null,
+  );
+  const [categoryDraft, setCategoryDraft] = useState<string[] | null>(null);
 
-  const [discoverMeals, setDiscoverMeals] = useState<DiscoverMeal[]>([]);
-  const [discoverTotal, setDiscoverTotal] = useState(0);
-  const [loadingDiscover, setLoadingDiscover] = useState(false);
-  const [discoverError, setDiscoverError] = useState<string | null>(null);
-  const [previewCount, setPreviewCount] = useState<number | undefined>();
+  // Debounce the search term so we only hit the API once the user pauses
+  // typing instead of on every keystroke.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const searchPending = search.trim() !== debouncedSearch.trim();
 
   const discoverState: FeedDiscoverState = useMemo(
     () => ({
-      search,
+      search: debouncedSearch,
       primaryCategory,
-      macroChips,
       sheetFilters,
     }),
-    [search, primaryCategory, macroChips, sheetFilters],
+    [debouncedSearch, primaryCategory, sheetFilters],
   );
 
   const showDiscover = hasActiveDiscoverState(discoverState);
 
-  const sheetFilterCount = countFeedAdvancedFilters(sheetFilters);
-  const customizeCount =
-    sheetFilterCount +
-    macroChips.length +
+  const discoverParams = useMemo(
+    () => buildDiscoverParams(discoverState),
+    [discoverState],
+  );
+
+  const discoverQuery = useInfiniteDiscoverMeals(discoverParams, {
+    enabled: showDiscover,
+  });
+  const discoverMeals = useMemo(
+    () => discoverQuery.data?.pages.flatMap((p) => p.items) ?? [],
+    [discoverQuery.data],
+  );
+  const discoverTotal = discoverQuery.data?.pages[0]?.total ?? 0;
+  const loadingDiscover = showDiscover && discoverQuery.isLoading;
+  const discoverError =
+    showDiscover && discoverQuery.isError
+      ? "Could not load meals. Make sure the backend is running."
+      : null;
+
+  // Background activity: a refetch of the *current* filter set (new search or
+  // filter), not the appending of further pages while scrolling.
+  const discoverRefreshing =
+    showDiscover &&
+    (searchPending ||
+      (discoverQuery.isFetching &&
+        !discoverQuery.isLoading &&
+        !discoverQuery.isFetchingNextPage));
+
+  // ── Live result-count preview for the open sheet ──────────────────────────
+  // Build the filters being previewed: the filter-sheet draft when it's open,
+  // otherwise the category-sheet draft merged onto applied filters.
+  const previewSheetFilters = useMemo<FeedAdvancedFilters>(() => {
+    if (filterOpen && filterDraft) return filterDraft;
+    if (moreOpen && categoryDraft) {
+      return {
+        ...sheetFilters,
+        categorySlugs: categoryDraft.length ? categoryDraft : undefined,
+      };
+    }
+    return sheetFilters;
+  }, [filterOpen, filterDraft, moreOpen, categoryDraft, sheetFilters]);
+
+  // Debounce the preview params so dragging sliders / rapid taps don't spam the
+  // count endpoint; identical param sets are still served from cache.
+  const [debouncedPreview, setDebouncedPreview] =
+    useState<FeedAdvancedFilters>(previewSheetFilters);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedPreview(previewSheetFilters), 250);
+    return () => clearTimeout(t);
+  }, [previewSheetFilters]);
+
+  const previewParams = useMemo(
+    () =>
+      buildDiscoverParams({
+        search: debouncedSearch,
+        primaryCategory,
+        sheetFilters: debouncedPreview,
+      }),
+    [debouncedSearch, primaryCategory, debouncedPreview],
+  );
+
+  const countQuery = useDiscoverCount(previewParams, {
+    enabled: filterOpen || moreOpen,
+  });
+  const previewCount = countQuery.data;
+  const previewLoading = (filterOpen || moreOpen) && countQuery.isFetching;
+
+  // ── Active filter / category counts (shown separately) ────────────────────
+  const categoryCount =
+    (sheetFilters.categorySlugs?.length ?? 0) +
     (primaryCategory && primaryCategory !== "more" ? 1 : 0);
+  // Everything except category slugs counts as a "filter".
+  const filterCount = Math.max(
+    0,
+    countFeedAdvancedFilters(sheetFilters) -
+      (sheetFilters.categorySlugs?.length ?? 0),
+  );
 
   const pushSheetFilters = useCallback(
     (next: FeedAdvancedFilters) => {
@@ -117,63 +199,15 @@ export function MealList() {
     ensureCollectionsLoaded();
   }, [refreshKey, ensureHomeLoaded, ensureCollectionsLoaded, showDiscover]);
 
+  // Refresh discover results after meal mutations (create/edit) bump the key.
+  const didMountRef = useRef(false);
   useEffect(() => {
-    if (!showDiscover) {
-      setDiscoverMeals([]);
-      setDiscoverTotal(0);
+    if (!didMountRef.current) {
+      didMountRef.current = true;
       return;
     }
-
-    let cancelled = false;
-    setLoadingDiscover(true);
-    setDiscoverError(null);
-
-    const params = buildDiscoverParams(discoverState);
-
-    fetchDiscoverMeals(params)
-      .then((result) => {
-        if (!cancelled) {
-          setDiscoverMeals(result.items);
-          setDiscoverTotal(result.total);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setDiscoverError(
-            "Could not load meals. Make sure the backend is running.",
-          );
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingDiscover(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [discoverState, showDiscover, refreshKey]);
-
-  useEffect(() => {
-    if (!filterOpen) return;
-
-    let cancelled = false;
-    const params = buildDiscoverParams({
-      ...discoverState,
-      sheetFilters,
-    });
-
-    fetchDiscoverCount(params)
-      .then((total) => {
-        if (!cancelled) setPreviewCount(total);
-      })
-      .catch(() => {
-        if (!cancelled) setPreviewCount(undefined);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [filterOpen, discoverState, sheetFilters]);
+    queryClient.invalidateQueries({ queryKey: discoverRootKey });
+  }, [refreshKey, queryClient]);
 
   const handlePrimarySelect = useCallback((id: PrimaryCategoryId) => {
     if (id === "more") {
@@ -183,25 +217,24 @@ export function MealList() {
     setPrimaryCategory((prev) => (prev === id ? null : id));
   }, []);
 
-  const toggleMacroChip = useCallback((id: MacroChipId) => {
-    setMacroChips((prev) =>
-      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id],
-    );
-  }, []);
-
-  const handleExploreCategory = useCallback((slug: string) => {
-    const match = FEED_PRIMARY_CATEGORIES.find((c) => c.slug === slug);
-    if (match) {
-      setPrimaryCategory(match.id);
-    } else {
-      setMacroChips((prev) =>
-        prev.includes(slug as MacroChipId)
-          ? prev
-          : [...prev, slug as MacroChipId],
-      );
-    }
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
+  const handleExploreCategory = useCallback(
+    (slug: string) => {
+      const match = FEED_PRIMARY_CATEGORIES.find((c) => c.slug === slug);
+      if (match) {
+        setPrimaryCategory(match.id);
+      } else {
+        const current = sheetFilters.categorySlugs ?? [];
+        if (!current.includes(slug)) {
+          pushSheetFilters({
+            ...sheetFilters,
+            categorySlugs: [...current, slug],
+          });
+        }
+      }
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    [sheetFilters, pushSheetFilters],
+  );
 
   const handleViewAllSection = useCallback((sectionId: string) => {
     if (sectionId === "high-protein-meals") {
@@ -225,7 +258,10 @@ export function MealList() {
   );
 
   const error = homeError ?? discoverError;
-  const loading = loadingHome || (showDiscover && loadingDiscover);
+  const discoverInitialLoading =
+    showDiscover && loadingDiscover && discoverMeals.length === 0;
+  const homeInitialLoading =
+    !showDiscover && loadingHome && !sections.length;
 
   return (
     <div className="flex flex-col gap-3 pb-4">
@@ -237,9 +273,7 @@ export function MealList() {
             onChange={setSearch}
             subtitle="Discover high-protein meals tailored to your goals."
             placeholder="Search high-protein meals, ingredients, diets…"
-            onFilterClick={() => setFilterOpen(true)}
-            activeFilterCount={sheetFilterCount}
-            filterButtonLabel="Filters"
+            loading={discoverRefreshing}
           />
         </div>
 
@@ -250,10 +284,9 @@ export function MealList() {
 
         <FeedFiltersCustomize
           onClick={() => setFilterOpen(true)}
-          activeCount={customizeCount}
+          filterCount={filterCount}
+          categoryCount={categoryCount}
         />
-
-        <FeedMacroChips active={macroChips} onToggle={toggleMacroChip} />
       </div>
 
       <MealFilterSheet
@@ -261,7 +294,9 @@ export function MealList() {
         onClose={() => setFilterOpen(false)}
         value={sheetFilters}
         onApply={pushSheetFilters}
+        onDraftChange={setFilterDraft}
         resultCount={previewCount}
+        resultLoading={previewLoading}
       />
 
       <FeedMoreCategoriesSheet
@@ -269,13 +304,22 @@ export function MealList() {
         onClose={() => setMoreOpen(false)}
         selectedSlugs={sheetFilters.categorySlugs ?? []}
         onApply={handleApplyCategories}
+        onDraftChange={setCategoryDraft}
+        resultCount={previewCount}
+        resultLoading={previewLoading}
         onOpenFilters={() => {
           setMoreOpen(false);
           setFilterOpen(true);
         }}
       />
 
-      {loading && !sections.length && !discoverMeals.length ? (
+      {error ? (
+        <div className="mt-6 rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      ) : null}
+
+      {(discoverInitialLoading || homeInitialLoading) && !error ? (
         <div
           className="flex flex-col items-center justify-center py-16"
           aria-busy="true"
@@ -287,18 +331,16 @@ export function MealList() {
         </div>
       ) : null}
 
-      {error ? (
-        <div className="mt-6 rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-          {error}
-        </div>
-      ) : null}
-
-      {!loading && !error && showDiscover ? (
+      {showDiscover && !error && !discoverInitialLoading ? (
         discoverMeals.length > 0 ? (
           <FeedDiscoverResults
             meals={discoverMeals}
             total={discoverTotal}
             title="Matching meals"
+            loading={discoverRefreshing}
+            hasMore={Boolean(discoverQuery.hasNextPage)}
+            loadingMore={discoverQuery.isFetchingNextPage}
+            onLoadMore={() => discoverQuery.fetchNextPage()}
           />
         ) : (
           <div className="mt-8 flex flex-col items-center px-6 py-12 text-center">
@@ -312,7 +354,6 @@ export function MealList() {
               onClick={() => {
                 setSearch("");
                 setPrimaryCategory(null);
-                setMacroChips([]);
                 pushSheetFilters(DEFAULT_FEED_ADVANCED_FILTERS);
               }}
               className="mt-6 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
@@ -323,7 +364,7 @@ export function MealList() {
         )
       ) : null}
 
-      {!showDiscover && !error ? (
+      {!showDiscover && !error && !homeInitialLoading ? (
         <FeedHomeSections
           sections={sections}
           onViewAll={handleViewAllSection}

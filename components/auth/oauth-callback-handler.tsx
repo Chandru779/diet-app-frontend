@@ -31,13 +31,13 @@ function OAuthCallbackContent() {
     completeGoogleAuth(flowId, clerkSessionId ?? undefined)
       .then((result) => {
         if (result.status === "needs_username" && result.token && result.user) {
-          setSession(result.user, result.token);
+          setSession(result.user, result.token, result.refreshToken);
           setNeedsUsername(true);
           setLoading(false);
           return;
         }
         if (result.token && result.user) {
-          setSession(result.user, result.token);
+          setSession(result.user, result.token, result.refreshToken);
           router.replace("/feed");
           router.refresh();
         }
@@ -53,8 +53,8 @@ function OAuthCallbackContent() {
     setLoading(true);
     setError(null);
     try {
-      const { token, user } = await setUsername(username.trim());
-      setSession(user, token);
+      const { token, user, refreshToken } = await setUsername(username.trim());
+      setSession(user, token, refreshToken);
       router.replace("/feed");
       router.refresh();
     } catch (err) {
